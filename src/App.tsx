@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import { Navbar, Footer } from "./components/Shared";
 import { Analytics } from "@vercel/analytics/react";
 import Home from "./pages/Home";
+import About from "./pages/About";
 import EarlyChildhood from "./pages/EarlyChildhood";
 import Elementary from "./pages/Elementary";
 import Parents from "./pages/Parents";
@@ -46,6 +47,7 @@ function AppContent() {
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
           <Route path="/early-childhood" element={<EarlyChildhood />} />
           <Route path="/elementary" element={<Elementary />} />
           <Route path="/parents" element={<Parents />} />

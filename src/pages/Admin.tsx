@@ -53,7 +53,9 @@ import {
   Minus,
   GraduationCap,
   Baby,
-  FileUp
+  FileUp,
+  ShieldCheck,
+  RefreshCw
 } from 'lucide-react';
 import { DEFAULT_CONFIG, deepMergeConfig, migrateConfig } from '../lib/constants';
 import toast, { Toaster } from 'react-hot-toast';
@@ -75,8 +77,6 @@ export default function Admin() {
   const [authorizedAdmins, setAuthorizedAdmins] = useState<any[]>([]);
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(['Global Settings']));
   
-  // Base administrator emails handled outside component for stability
-
   const toggleSection = (title: string) => {
     const newSections = new Set(openSections);
     if (newSections.has(title)) {
@@ -256,6 +256,7 @@ export default function Admin() {
     };
   }, [user, isAuthorized, activeTab]);
 
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
@@ -358,7 +359,30 @@ export default function Admin() {
         addedAt: new Date().toISOString()
       });
       toast.success('Admin added successfully', { id: loadingToast });
-      setAuthorizedAdmins(prev => [...prev, { email: emailToAdd, addedBy: user.email, addedAt: new Date().toISOString() }]);
+        const updatedAdmins = [...authorizedAdmins, { email: emailToAdd, addedBy: user.email, addedAt: new Date().toISOString() }];
+        setAuthorizedAdmins(updatedAdmins);
+        
+        // Sync to site config
+        if (siteConfig) {
+          const allEmails = Array.from(new Set([
+            ...(siteConfig.contactEmail ? [siteConfig.contactEmail.toLowerCase()] : []),
+            ...updatedAdmins.map(a => a.email.toLowerCase())
+          ]));
+          
+          // Also automatically add to notification list if not already there
+          const currentNotifications = siteConfig.notificationAdmins || [];
+          const nextNotifications = Array.from(new Set([...currentNotifications, emailToAdd]));
+          
+          const newConfig = { 
+            ...siteConfig, 
+            allAdmins: allEmails,
+            notificationAdmins: nextNotifications,
+            orderNotificationAdmins: Array.from(new Set([...(siteConfig.orderNotificationAdmins || []), emailToAdd]))
+          };
+          setSiteConfig(newConfig);
+          handleUpdateConfig(newConfig, true);
+        }
+      
       setNewAdminEmail('');
     } catch (err: any) {
       toast.error('Failed to add admin: ' + err.message, { id: loadingToast });
@@ -377,7 +401,26 @@ export default function Admin() {
     try {
       await deleteDoc(doc(db, 'admins', targetEmail));
       toast.success('Access revoked', { id: loadingToast });
-      setAuthorizedAdmins(prev => prev.filter(a => a.email !== targetEmail));
+      const updatedAdmins = authorizedAdmins.filter(a => a.email !== targetEmail);
+      setAuthorizedAdmins(updatedAdmins);
+      
+      // Sync to site config
+      if (siteConfig) {
+        const allEmails = Array.from(new Set([
+          ...(siteConfig.contactEmail ? [siteConfig.contactEmail.toLowerCase()] : []),
+          ...updatedAdmins.map(a => a.email.toLowerCase())
+        ]));
+        
+        const newConfig = { 
+          ...siteConfig, 
+          allAdmins: allEmails,
+          notificationAdmins: (siteConfig.notificationAdmins || []).filter((e: string) => e.toLowerCase() !== targetEmail),
+          orderNotificationAdmins: (siteConfig.orderNotificationAdmins || []).filter((e: string) => e.toLowerCase() !== targetEmail)
+        };
+        setSiteConfig(newConfig);
+        handleUpdateConfig(newConfig, true);
+      }
+
       if (isSelf) {
         await signOut(auth);
       }
@@ -464,9 +507,26 @@ export default function Admin() {
 
   const formatDate = (dateVal: any) => {
     if (!dateVal) return 'N/A';
-    const date = dateVal.toDate ? dateVal.toDate() : new Date(dateVal);
+    let date: Date;
+    if (dateVal.toDate) {
+      date = dateVal.toDate();
+    } else if (dateVal instanceof Date) {
+      date = dateVal;
+    } else if (typeof dateVal === 'object' && dateVal.seconds) { // Firestore timestamp object fallback
+      date = new Date(dateVal.seconds * 1000);
+    } else {
+      date = new Date(dateVal);
+    }
+    
     if (isNaN(date.getTime())) return 'N/A';
-    return `${date.toLocaleDateString('he-IL')} | ${date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}`;
+    
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    return `${day}/${month}/${year} | ${hours}:${minutes}`;
   };
 
   const handleUpdateConfig = async (newConfig: any, silent = true) => {
@@ -904,7 +964,7 @@ export default function Admin() {
                         </div>
                         <div>
                           <h4 className="font-bold text-slate-900 text-lg leading-tight">{c.name}</h4>
-                          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">{new Date(c.createdAt).toLocaleDateString()} at {new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">{formatDate(c.createdAt)}</p>
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -981,7 +1041,7 @@ export default function Admin() {
                         <div>
                           <p className="text-xs font-black text-teal-600 uppercase tracking-widest mb-2">Contact Details</p>
                           <h2 className="text-3xl font-serif font-bold text-slate-900">{selectedContact.name}</h2>
-                          <p className="text-slate-500">{new Date(selectedContact.createdAt).toLocaleString()}</p>
+                          <p className="text-slate-500">{formatDate(selectedContact.createdAt)}</p>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                           <div className="space-y-2">
@@ -1213,13 +1273,7 @@ export default function Admin() {
                 {
                   title: "Global Settings",
                   icon: Globe,
-                  fields: [
-                    { id: 'contactEmail', label: 'Contact Email', type: 'text' },
-                    { id: 'contactPhone', label: 'Contact Phone', type: 'text' },
-                    { id: 'navBtnText', label: 'Nav Button Text', type: 'text' },
-                    { id: 'tagline', label: 'Logo Tagline', type: 'text' },
-                    { id: 'footerText', label: 'Footer Description', type: 'textarea' },
-                  ]
+                  fields: []
                 },
                 {
                   title: "Hero",
@@ -1562,23 +1616,8 @@ export default function Admin() {
                         )}
                         {section.title === "Global Settings" && (
                           <div className="md:col-span-2 p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-6">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                              <div className="space-y-2">
-                                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Kit Price (₪)</p>
-                                <input 
-                                  type="number" 
-                                  value={siteConfig?.kitPrice ?? 799} 
-                                  onChange={(e) => handleTextChange('kitPrice', e.target.value)} 
-                                  placeholder="799"
-                                  className="w-full px-6 py-3 bg-white border border-slate-200 rounded-full font-bold text-sm outline-none focus:border-teal-500" 
-                                />
-                                <p className="text-[10px] text-slate-400 font-medium px-4">
-                                  This price will be used across all kits on the checkout page.
-                                </p>
-                              </div>
-                            </div>
-                            
-                             <div className="space-y-4 pt-4 border-t border-slate-200">
+                             {/* 1. Email Notifications (Contact) */}
+                             <div className="space-y-4">
                                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Contact Notifications</p>
                                <div className="flex flex-col gap-4">
                                  <div className="flex items-center gap-4">
@@ -1601,10 +1640,8 @@ export default function Admin() {
                                       <div className="flex gap-2">
                                         <button 
                                           onClick={() => {
-                                            const contact = siteConfig.contactEmail?.toLowerCase();
                                             const admins = authorizedAdmins.map(a => a.email.toLowerCase());
-                                            const all = Array.from(new Set([...(contact ? [contact] : []), ...admins]));
-                                            const newConfig = {...siteConfig, notificationAdmins: all};
+                                            const newConfig = {...siteConfig, notificationAdmins: admins};
                                             setSiteConfig(newConfig);
                                             handleUpdateConfig(newConfig, true);
                                           }}
@@ -1621,12 +1658,7 @@ export default function Admin() {
                                       </div>
                                    </div>
                                    <div className="flex flex-wrap gap-2">
-                                     {/* Combined List of All Potential Recipients */}
-                                     {Array.from(new Set([
-                                       ...(siteConfig.contactEmail ? [siteConfig.contactEmail.toLowerCase()] : []),
-                                       ...authorizedAdmins.map(a => a.email.toLowerCase())
-                                     ])).map((email) => {
-                                       const isPrimary = email === siteConfig.contactEmail?.toLowerCase();
+                                     {authorizedAdmins.map(a => a.email.toLowerCase()).map((email) => {
                                        const isSelected = (siteConfig?.notificationAdmins || []).some((e: string) => e.toLowerCase() === email);
                                        
                                        return (
@@ -1652,23 +1684,21 @@ export default function Admin() {
                                            }`}>
                                              {isSelected && <CheckCircle2 size={8} className="text-white"/>}
                                            </div>
-                                           <div className="flex flex-col items-start leading-none">
-                                              <span className="text-xs">{email}</span>
-                                              {isPrimary && <span className="text-[7px] font-black text-teal-400 uppercase mt-0.5">Global Contact</span>}
-                                           </div>
+                                           <span className="text-xs">{email}</span>
                                          </button>
                                        );
                                      })}
                                    </div>
                                    {(siteConfig?.notificationAdmins || []).length === 0 && (
                                       <p className="text-[10px] text-amber-600 font-bold italic px-1">
-                                        Note: If no recipients are selected, notifications will fallback to the Primary Contact Email.
+                                        Note: Notifications will use default recipients if no team members are selected.
                                       </p>
                                    )}
                                  </div>
                                </div>
                              </div>
 
+                             {/* 2. Email Notifications (Order) */}
                              <div className="space-y-4 pt-4 border-t border-slate-200">
                                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Order Notifications</p>
                                <div className="flex flex-col gap-4">
@@ -1687,75 +1717,165 @@ export default function Admin() {
                                  </div>
 
                                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
-                                   <div className="flex justify-between items-center">
-                                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Recipient List (Team)</p>
-                                      <div className="flex gap-2">
-                                        <button 
-                                          onClick={() => {
-                                            const contact = siteConfig.contactEmail?.toLowerCase();
-                                            const admins = authorizedAdmins.map(a => a.email.toLowerCase());
-                                            const all = Array.from(new Set([...(contact ? [contact] : []), ...admins]));
-                                            const newConfig = {...siteConfig, orderNotificationAdmins: all};
-                                            setSiteConfig(newConfig);
-                                            handleUpdateConfig(newConfig, true);
-                                          }}
-                                          className="text-[10px] font-black text-teal-600 uppercase"
-                                        >Select All</button>
-                                        <button 
-                                          onClick={() => {
-                                            const newConfig = {...siteConfig, orderNotificationAdmins: []};
-                                            setSiteConfig(newConfig);
-                                            handleUpdateConfig(newConfig, true);
-                                          }}
-                                          className="text-[10px] font-black text-slate-400 uppercase"
-                                        >Clear</button>
-                                      </div>
-                                   </div>
-                                   <div className="flex flex-wrap gap-2">
-                                     {/* Combined List of All Potential Recipients */}
-                                     {Array.from(new Set([
-                                       ...(siteConfig.contactEmail ? [siteConfig.contactEmail.toLowerCase()] : []),
-                                       ...authorizedAdmins.map(a => a.email.toLowerCase())
-                                     ])).map((email) => {
-                                       const isPrimary = email === siteConfig.contactEmail?.toLowerCase();
-                                       const isSelected = (siteConfig?.orderNotificationAdmins || []).some((e: string) => e.toLowerCase() === email);
-                                       
-                                       return (
+                                    <div className="flex justify-between items-center">
+                                       <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Recipient List (Team)</p>
+                                       <div className="flex gap-2">
                                          <button 
-                                           key={email}
                                            onClick={() => {
-                                             const current = siteConfig?.orderNotificationAdmins || [];
-                                             const next = current.some((e: string) => e.toLowerCase() === email) 
-                                               ? current.filter((e: string) => e.toLowerCase() !== email)
-                                               : [...current, email];
-                                             const newConfig = {...siteConfig, orderNotificationAdmins: next};
+                                             const admins = authorizedAdmins.map(a => a.email.toLowerCase());
+                                             const newConfig = {...siteConfig, orderNotificationAdmins: admins};
                                              setSiteConfig(newConfig);
                                              handleUpdateConfig(newConfig, true);
                                            }}
-                                           className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all ${
-                                             isSelected
-                                               ? 'bg-teal-50 border-teal-200 text-teal-700 font-bold shadow-sm'
-                                               : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'
-                                           }`}
-                                         >
-                                           <div className={`w-3 h-3 rounded-full border flex items-center justify-center ${
-                                              isSelected ? 'bg-teal-500 border-teal-500' : 'border-slate-200'
-                                           }`}>
-                                             {isSelected && <CheckCircle2 size={8} className="text-white"/>}
-                                           </div>
-                                           <div className="flex flex-col items-start leading-none">
-                                              <span className="text-xs">{email}</span>
-                                              {isPrimary && <span className="text-[7px] font-black text-teal-400 uppercase mt-0.5">Global Contact</span>}
-                                           </div>
-                                         </button>
-                                       );
-                                     })}
-                                   </div>
-                                   {(siteConfig?.orderNotificationAdmins || []).length === 0 && (
-                                      <p className="text-[10px] text-amber-600 font-bold italic px-1">
-                                        Note: If no recipients are selected, notifications will fallback to the Primary Contact Email.
-                                      </p>
-                                   )}
+                                           className="text-[10px] font-black text-teal-600 uppercase"
+                                         >Select All</button>
+                                         <button 
+                                           onClick={() => {
+                                             const newConfig = {...siteConfig, orderNotificationAdmins: []};
+                                             setSiteConfig(newConfig);
+                                             handleUpdateConfig(newConfig, true);
+                                           }}
+                                           className="text-[10px] font-black text-slate-400 uppercase"
+                                         >Clear</button>
+                                       </div>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                      {authorizedAdmins.map(a => a.email.toLowerCase()).map((email) => {
+                                        const isSelected = (siteConfig?.orderNotificationAdmins || []).some((e: string) => e.toLowerCase() === email);
+                                        
+                                        return (
+                                          <button 
+                                            key={email}
+                                            onClick={() => {
+                                              const current = siteConfig?.orderNotificationAdmins || [];
+                                              const next = current.some((e: string) => e.toLowerCase() === email) 
+                                                ? current.filter((e: string) => e.toLowerCase() !== email)
+                                                : [...current, email];
+                                              const newConfig = {...siteConfig, orderNotificationAdmins: next};
+                                              setSiteConfig(newConfig);
+                                              handleUpdateConfig(newConfig, true);
+                                            }}
+                                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all ${
+                                              isSelected
+                                                ? 'bg-teal-50 border-teal-200 text-teal-700 font-bold shadow-sm'
+                                                : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'
+                                            }`}
+                                          >
+                                            <div className={`w-3 h-3 rounded-full border flex items-center justify-center ${
+                                               isSelected ? 'bg-teal-500 border-teal-500' : 'border-slate-200'
+                                            }`}>
+                                              {isSelected && <CheckCircle2 size={8} className="text-white"/>}
+                                            </div>
+                                            <span className="text-xs">{email}</span>
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                    {(siteConfig?.orderNotificationAdmins || []).length === 0 && (
+                                       <p className="text-[10px] text-amber-600 font-bold italic px-1">
+                                         Note: Notifications will use default recipients if no team members are selected.
+                                       </p>
+                                    )}
+                                  </div>
+                               </div>
+                             </div>
+
+                             {/* 3. Kit Price & Contact Info */}
+                             <div className="space-y-4 pt-4 border-t border-slate-200">
+                               <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Pricing & Contact Info</p>
+                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                 <div className="space-y-2">
+                                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-4">Kit Price (₪)</label>
+                                   <input 
+                                     type="number" 
+                                     value={siteConfig?.kitPrice ?? 799} 
+                                     onChange={(e) => handleTextChange('kitPrice', e.target.value)} 
+                                     placeholder="799"
+                                     className="w-full px-6 py-3 bg-white border border-slate-200 rounded-full font-bold text-sm outline-none focus:border-teal-500" 
+                                   />
+                                   <p className="text-[10px] text-slate-400 font-medium px-4">
+                                     This price will be used across all kits on the checkout page.
+                                   </p>
+                                 </div>
+                                 <div /> {/* Spacer */}
+                                 <div className="space-y-2">
+                                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-4">Contact Email</label>
+                                   <input 
+                                     type="text" 
+                                     value={siteConfig?.contactEmail || ''} 
+                                     onChange={(e) => handleTextChange('contactEmail', e.target.value)}
+                                     placeholder="email@example.com"
+                                     className="w-full px-6 py-3 bg-white border border-slate-200 rounded-full font-bold text-sm outline-none focus:border-teal-500" 
+                                   />
+                                 </div>
+                                 <div className="space-y-2">
+                                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-4">Contact Phone</label>
+                                   <input 
+                                     type="text" 
+                                     value={siteConfig?.contactPhone || ''} 
+                                     onChange={(e) => handleTextChange('contactPhone', e.target.value)}
+                                     placeholder="050-0000000"
+                                     className="w-full px-6 py-3 bg-white border border-slate-200 rounded-full font-bold text-sm outline-none focus:border-teal-500" 
+                                   />
+                                 </div>
+                               </div>
+                             </div>
+
+                             {/* 4. Branding & Footer */}
+                             <div className="space-y-4 pt-4 border-t border-slate-200">
+                               <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Branding & Footer</p>
+                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                 <div className="space-y-2">
+                                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-4">Nav Button Text (EN)</label>
+                                   <input 
+                                     type="text" 
+                                     value={siteConfig?.navBtnText || ''} 
+                                     onChange={(e) => handleTextChange('navBtnText', e.target.value)}
+                                     className="w-full px-6 py-3 bg-white border border-slate-200 rounded-full font-bold text-sm outline-none focus:border-teal-500" 
+                                   />
+                                 </div>
+                                 <div className="space-y-2" dir="rtl">
+                                   <label className="text-xs font-bold text-brand-pink uppercase tracking-wider mr-4 inline-block">טקסט כפתור ניווט (HE)</label>
+                                   <input 
+                                     type="text" 
+                                     value={siteConfig?.navBtnText_he || ''} 
+                                     onChange={(e) => handleTextChange('navBtnText_he', e.target.value)}
+                                     className="w-full px-6 py-3 bg-pink-50/30 border border-pink-100 rounded-full text-sm font-bold outline-none focus:border-pink-500" 
+                                   />
+                                 </div>
+                                 <div className="space-y-2">
+                                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-4">Logo Tagline (EN)</label>
+                                   <input 
+                                     type="text" 
+                                     value={siteConfig?.tagline || ''} 
+                                     onChange={(e) => handleTextChange('tagline', e.target.value)}
+                                     className="w-full px-6 py-3 bg-white border border-slate-200 rounded-full font-bold text-sm outline-none focus:border-teal-500" 
+                                   />
+                                 </div>
+                                 <div className="space-y-2" dir="rtl">
+                                   <label className="text-xs font-bold text-brand-pink uppercase tracking-wider mr-4 inline-block">סלוגן לוגו (HE)</label>
+                                   <input 
+                                     type="text" 
+                                     value={siteConfig?.tagline_he || ''} 
+                                     onChange={(e) => handleTextChange('tagline_he', e.target.value)}
+                                     className="w-full px-6 py-3 bg-pink-50/30 border border-pink-100 rounded-full text-sm font-bold outline-none focus:border-pink-500" 
+                                   />
+                                 </div>
+                                 <div className="md:col-span-2 space-y-2">
+                                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-4">Footer Description (EN)</label>
+                                   <textarea 
+                                     value={siteConfig?.footerText || ''} 
+                                     onChange={(e) => handleTextChange('footerText', e.target.value)}
+                                     className="w-full px-8 py-4 bg-white border border-slate-200 rounded-[32px] font-bold h-32 resize-none focus:border-teal-500 outline-none"
+                                   />
+                                 </div>
+                                 <div className="md:col-span-2 space-y-2" dir="rtl">
+                                   <label className="text-xs font-bold text-brand-pink uppercase tracking-wider mr-4 inline-block">תיאור פוטר (HE)</label>
+                                   <textarea 
+                                     value={siteConfig?.footerText_he || ''} 
+                                     onChange={(e) => handleTextChange('footerText_he', e.target.value)}
+                                     className="w-full px-8 py-4 bg-pink-50/30 border border-pink-100 rounded-[32px] font-bold h-32 resize-none focus:border-pink-500 outline-none"
+                                   />
                                  </div>
                                </div>
                              </div>

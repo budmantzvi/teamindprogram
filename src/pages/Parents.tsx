@@ -39,11 +39,11 @@ export default function Parents() {
   ].filter(Boolean);
   
   const fallbackGallery = [
-    "https://picsum.photos/seed/parents-1/400/400",
-    "https://picsum.photos/seed/parents-2/400/400",
-    "https://picsum.photos/seed/parents-3/400/400",
-    "https://picsum.photos/seed/parents-4/400/400",
-    "https://picsum.photos/seed/parents-5/400/400",
+    "/images/early-1.jpeg",
+    "/images/Elementary-2.jpeg",
+    "/images/early-4.jpeg",
+    "/images/Elementary-5.jpeg",
+    "/images/early-7.png",
   ];
 
   const displayGallery = galleryImages.length > 0 ? galleryImages : fallbackGallery;

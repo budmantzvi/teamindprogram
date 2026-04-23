@@ -36,14 +36,18 @@ export default function EarlyChildhood() {
     siteImages.earlyGallery3,
     siteImages.earlyGallery4,
     siteImages.earlyGallery5,
+    siteImages.earlyGallery6,
+    siteImages.earlyGallery7,
   ].filter(Boolean);
   
   const fallbackGallery = [
     "/images/early-1.jpeg",
-    "/images/early-2.jpeg",
+    "/images/early-2.png",
     "/images/early-3.jpeg",
     "/images/early-4.jpeg",
     "/images/early-5.jpeg",
+    "/images/early-6.png",
+    "/images/early-7.png",
   ];
 
   const displayGallery = galleryImages.length > 0 ? galleryImages : fallbackGallery;

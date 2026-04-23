@@ -36,6 +36,8 @@ export default function Elementary() {
     siteImages.elementaryGallery3,
     siteImages.elementaryGallery4,
     siteImages.elementaryGallery5,
+    siteImages.elementaryGallery6,
+    siteImages.elementaryGallery7,
   ].filter(Boolean);
   
   const fallbackGallery = [
@@ -44,6 +46,8 @@ export default function Elementary() {
     "/images/Elementary-3.jpeg",
     "/images/Elementary-4.jpeg",
     "/images/Elementary-5.jpeg",
+    "/images/Elementary-6.jpeg",
+    "/images/Elementary-7.jpeg",
   ];
 
   const displayGallery = galleryImages.length > 0 ? galleryImages : fallbackGallery;

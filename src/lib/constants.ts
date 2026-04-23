@@ -5,6 +5,46 @@ export const safeSplit = (val: any, char: string = ' '): string[] => {
   return val.split(char);
 };
 
+export const FALLBACK_IMAGES: any = {
+  hero: "/images/kit.jpg",
+  about: "/images/early-3.jpeg",
+  kit: "/images/kit.jpg",
+  founder1: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1976&auto=format&fit=crop",
+  founder2: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=1961&auto=format&fit=crop",
+  why: "/images/why-teamind.png",
+  
+  // Early Childhood
+  earlyHero: "/images/for_early_childhood.png",
+  earlyKit: "/images/kit.jpg",
+  earlyGallery1: "/images/early-1.jpeg",
+  earlyGallery2: "/images/early-2.png",
+  earlyGallery3: "/images/early-3.jpeg",
+  earlyGallery4: "/images/early-4.jpeg",
+  earlyGallery5: "/images/early-5.jpeg",
+  earlyGallery6: "/images/early-6.png",
+  earlyGallery7: "/images/early-7.png",
+  
+  // Elementary
+  elementaryHero: "/images/for_elemntry.png",
+  elementaryKit: "/images/kit.jpg",
+  elementaryGallery1: "/images/Elementary-1.jpeg",
+  elementaryGallery2: "/images/Elementary-2.jpeg",
+  elementaryGallery3: "/images/Elementary-3.jpeg",
+  elementaryGallery4: "/images/Elementary-4.jpeg",
+  elementaryGallery5: "/images/Elementary-5.jpeg",
+  elementaryGallery6: "/images/Elementary-6.jpeg",
+  elementaryGallery7: "/images/Elementary-7.jpeg",
+  
+  // Parents
+  parentsHero: "/images/for_parents.png",
+  parentsKit: "/images/kit.jpg",
+  parentsGallery1: "/images/early-1.jpeg",
+  parentsGallery2: "/images/Elementary-2.jpeg",
+  parentsGallery3: "/images/early-4.jpeg",
+  parentsGallery4: "/images/Elementary-5.jpeg",
+  parentsGallery5: "/images/early-7.png"
+};
+
 export const DEFAULT_CONFIG: any = {
   contactEmail: 'teamind50@gmail.com',
   contactPhone: '972503422600',
@@ -74,6 +114,7 @@ export const DEFAULT_CONFIG: any = {
   kitPrice: 799,
   emailNotifications: 'both',
   notificationAdmins: [], // List of specific admin emails to notify for contact form
+  allAdmins: [], // Flat list of all authorized admin emails for fallback notifications
   orderNotifications: 'both',
   orderNotificationAdmins: [], // List of specific admin emails to notify for orders
   showHero: true,
@@ -101,14 +142,14 @@ export const DEFAULT_CONFIG: any = {
       role: "Professional Lead & Founder",
       desc: "A senior Occupational Therapist and lecturer at the Hebrew University. With over 18 years of clinical experience, Dr. Budman specializes in child development and executive functions. She has published multiple research papers on cognitive development and serves as a lead consultant for educational ministries. Her vision is to make neuro-developmental tools accessible to every child.",
       stats: ["PhD OT", "18+ Years Exp.", "Hebrew University Faculty"],
-      image: ""
+      image: "founder1"
     },
     {
       name: "Sarah Elharar",
       role: "Musical & Production Lead",
       desc: "An innovative musician, entrepreneur, and developer of pedagogical products. Sarah discovered that music is the ultimate key to encoding cognitive behaviors in children's memory. Over the last decade, she has produced award-winning learning materials that combine storytelling with rhythmic and musical patterns, helping children 'sing' their way to better executive function.",
       stats: ["10+ Years Exp.", "Musical Innovation", "Product Designer"],
-      image: ""
+      image: "founder2"
     }
   ],
   earlyChildhood: {
@@ -222,14 +263,14 @@ export const DEFAULT_CONFIG: any = {
       role: "מובילה מקצועית ומייסדת",
       desc: "מרפאה בעיסוק בכירה ומרצה באוניברסיטה העברית. עם מעל 18 שנות ניסיון קליני, ד\"ר בדמן מתמחה בהתפתחות הילד ותפקודים ניהוליים. היא פרסמה מאמרים מחקריים רבים בתחום ההתפתחות הקוגניטיבית ומשמשת כיועצת בכירה למשרדי חינוך. החזון שלה הוא להנגיש כלים נוירו-התפתחותיים לכל ילד.",
       stats: ["דוקטורט OT", "18+ שנות ניסיון", "סגל האוניברסיטה העברית"],
-      image: ""
+      image: "founder1"
     },
     {
       name: "שרה אלחרר",
       role: "מובילה מוזיקלית והפקה",
       desc: "מוזיקאית חדשנית, יזמית ומפתחת מוצרים פדגוגיים. שרה גילתה שהמוזיקה היא המפתח האולטימטיבי לקידוד התנהגויות קוגניטיביות בזיכרון של ילדים. בעשור האחרון היא הפיקה חומרי למידה זוכי פרסים המשלבים סיפורים עם דפוסים קצביים ומוזיקליים, ועוזרים לילדים 'לשיר' את דרכם לתפקוד ניהולי טוב יותר.",
       stats: ["10+ שנות ניסיון", "חדשנות מוזיקלית", "מעצבת מוצרים"],
-      image: ""
+      image: "founder2"
     }
   ],
   earlyChildhood_he: {

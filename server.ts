@@ -19,11 +19,96 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2023-10-16" as any,
 });
 
+/**
+ * Helper to get validated recipients from various sources
+ */
+const getRecipients = (adminEmails: any, adminEmail: any, fallback: string = 'teamind50@gmail.com'): string[] => {
+  let raw: any[] = [];
+  const normalizedFallback = fallback.toLowerCase().trim();
+
+  // 1. Process client-provided emails (The Admin Panel settings)
+  if (Array.isArray(adminEmails)) {
+    adminEmails.forEach(item => {
+      if (typeof item === 'string') {
+        item.split(',').forEach(s => raw.push(s.trim()));
+      } else {
+        raw.push(item);
+      }
+    });
+  } else if (typeof adminEmails === 'string') {
+    adminEmails.split(',').forEach(s => raw.push(s.trim()));
+  }
+
+  if (typeof adminEmail === 'string') {
+    adminEmail.split(',').forEach(s => raw.push(s.trim()));
+  }
+
+  const filterEmails = (list: any[]) => list
+    .map(email => String(email || '').trim().toLowerCase())
+    .filter(email => email && email.includes('@'));
+
+  let clientEmails = filterEmails(raw);
+
+  // LOGIC:
+  // If the admin has set specific recipients in the UI, use them.
+  if (clientEmails.length > 0) {
+    console.log(`[getRecipients] Using Admin Panel specified recipients: [${clientEmails.join(', ')}]`);
+    return Array.from(new Set(clientEmails));
+  }
+
+  // 2. ONLY fallback to environment if NO UI settings exist
+  const envEmail = (process.env.CONTACT_EMAIL || '').trim();
+  const envEmails = envEmail.split(',').map(s => s.trim().toLowerCase()).filter(e => e.includes('@'));
+
+  if (envEmails.length > 0) {
+    console.log(`[getRecipients] No UI settings. Using Environment Variables: [${envEmails.join(', ')}]`);
+    return Array.from(new Set(envEmails));
+  }
+
+  // 3. Absolute fallback
+  console.log(`[getRecipients] No settings found. Falling back to: ${normalizedFallback}`);
+  return [normalizedFallback];
+};
+
+/**
+ * Robust date formatting for emails
+ */
+const formatDateForEmail = () => {
+    const d = new Date();
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} | ${hours}:${minutes}`;
+};
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  // Add body parsing middleware
   app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+  console.log("Middleware: Body parsers enabled (JSON & URL-encoded)");
+
+  console.log("--- Server Environment Config ---");
+  console.log("RESEND_API_KEY: ", process.env.RESEND_API_KEY ? "CONFIGURED" : "MISSING");
+  console.log("CONTACT_EMAIL:  ", process.env.CONTACT_EMAIL ? "CONFIGURED" : "MISSING (will use Admin UI values)");
+  console.log("---------------------------------");
+
+  // API recipes
+  app.get("/api/health", (req, res) => {
+    res.json({ 
+      status: "ok", 
+      config: {
+        hasResendKey: !!process.env.RESEND_API_KEY,
+        hasSenderEmail: !!process.env.RESEND_SENDER_EMAIL,
+        hasContactEmail: !!process.env.CONTACT_EMAIL,
+        nodeEnv: process.env.NODE_ENV
+      }
+    });
+  });
 
   // API Route: Contact Form
   app.post("/api/contact", async (req, res) => {
@@ -42,29 +127,9 @@ async function startServer() {
 
     const nSetting = emailNotifications || notificationSetting || 'both';
     
-    // Robust recipient collection
-    let rawRecipients: any[] = [];
-    const sourceEmails = adminEmails || adminEmail;
-    
-    if (Array.isArray(sourceEmails)) {
-      rawRecipients = sourceEmails;
-    } else if (sourceEmails) {
-      rawRecipients = [sourceEmails];
-    } 
-    
-    // If still empty, use environment fallback
-    if (rawRecipients.length === 0) {
-      rawRecipients = [process.env.CONTACT_EMAIL || 'teamind50@gmail.com'];
-    }
+    const recipients = getRecipients(adminEmails, adminEmail);
 
-    // Clean and validate recipients
-    const recipients = Array.from(new Set(rawRecipients))
-      .map(r => String(r || '').trim())
-      .filter(r => r && r.includes('@'));
-
-    console.log(`[ContactForm] Submission from ${name} (${email}). Notification: ${nSetting}`);
-    console.log(`[ContactForm] Raw recipients from request:`, { adminEmail, adminEmails });
-    console.log(`[ContactForm] Calculated target admin recipients: ${recipients.join(', ')}`);
+    console.log(`[ContactForm] Submission from ${name}. Recipients: ${recipients.join(', ')}`);
 
     if (nSetting === 'none') {
       return res.json({ success: true, message: "Notifications disabled by admin" });
@@ -77,40 +142,44 @@ async function startServer() {
       // 1. Email to Team
       if (nSetting === 'both' || nSetting === 'admin') {
         if (recipients.length > 0) {
-          console.log(`[ContactForm] Attempting to send to ${recipients.length} recipients...`);
+          console.log(`[ContactForm] Sending to: ${recipients.join(', ')}`);
           
-          for (const recipient of recipients) {
-            try {
-              const senderEmail = process.env.RESEND_SENDER_EMAIL || 'support@teamindprogram.com';
-              const { data, error } = await resend.emails.send({
-                from: `TEAMIND <${senderEmail}>`,
-                to: [recipient],
-                subject: `New Message from ${name}`,
-                html: `
-                  <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-                    <h2 style="color: #0d9488;">New Contact Form Submission</h2>
-                    <p><strong>Name:</strong> ${name}</p>
-                    <p><strong>Email:</strong> ${email}</p>
-                    <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
-                    <p><strong>Message:</strong></p>
-                    <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #0d9488;">
-                      ${message.replace(/\n/g, '<br/>')}
-                    </div>
+          const senderEmail = process.env.RESEND_SENDER_EMAIL || 'support@teamindprogram.com';
+          const submissionDate = formatDateForEmail();
+          
+          const emailPromises = recipients.map(recipient => 
+            resend.emails.send({
+              from: `TEAMIND <${senderEmail}>`,
+              to: [recipient],
+              subject: `New Message from ${name}`,
+              html: `
+                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                  <h2 style="color: #0d9488;">New Contact Form Submission</h2>
+                  <p><strong>Date:</strong> ${submissionDate}</p>
+                  <p><strong>Name:</strong> ${name}</p>
+                  <p><strong>Email:</strong> ${email}</p>
+                  <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
+                  <p><strong>Message:</strong></p>
+                  <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #0d9488;">
+                    ${(message || '').replace(/\n/g, '<br/>')}
                   </div>
-                `,
-              });
-              if (error) {
-                console.error(`[ContactForm] Resend error for recipient ${recipient}:`, error);
-              } else {
-                console.log(`[ContactForm] Successfully sent to ${recipient}. ID: ${data?.id}`);
-                adminResult = data;
-              }
-            } catch (err) {
-              console.error(`[ContactForm] Exception sending to ${recipient}:`, err);
+                </div>
+              `,
+            })
+          );
+
+          const results = await Promise.allSettled(emailPromises);
+          results.forEach((res, idx) => {
+            if (res.status === 'fulfilled' && !res.value.error) {
+              console.log(`[ContactForm] Success for ${recipients[idx]}`);
+              adminResult = res.value.data;
+            } else {
+              const error = res.status === 'fulfilled' ? res.value.error : res.reason;
+              console.error(`[ContactForm] Failure for ${recipients[idx]}:`, error);
             }
-          }
+          });
         } else {
-          console.warn("[ContactForm] No valid admin recipients found.");
+          console.warn("[ContactForm] No recipients found.");
         }
       }
 
@@ -196,25 +265,65 @@ async function startServer() {
 
   // API Route: Make.com Payment Webhook
   app.post("/api/make-payment", async (req, res) => {
-    const { orderId, amount, customer_name, email, phone, product_name, city, street, houseNumber, apartment, zipCode } = req.body;
+    // 1. Validate if we even have a body to prevent empty/probe requests from hitting Make
+    if (!req.body || (Object.keys(req.body).length === 0)) {
+      console.warn("[MakePayment] Ignoring empty or invalid request probe.");
+      return res.status(400).json({ error: "Empty payload" });
+    }
+
+    const { 
+      orderId, 
+      amount, 
+      customer_name, 
+      name: bodyName,
+      fullName: bodyFullName,
+      email, 
+      phone, 
+      product_name, 
+      city, 
+      street, 
+      houseNumber, 
+      apartment, 
+      zipCode 
+    } = req.body;
+
+    // 2. Resolve field values with fallback
+    const resolvedName = (customer_name || bodyName || bodyFullName || "").toString().trim();
+    const resolvedAmount = Number(amount || req.body.price || 0);
+    const resolvedPhone = (phone || req.body.phone || "").toString().trim();
+
+    // If critical data is missing, don't forward to Make to avoid "Validation Failed" emails
+    if (!resolvedName || resolvedAmount <= 0) {
+      console.warn("[MakePayment] Validation failed locally, skipping Make.com call.", { resolvedName, resolvedAmount });
+      return res.status(400).json({ error: "Invalid name or amount" });
+    }
 
     const payload = {
+      // Primary keys
       orderId: String(orderId || '').trim(),
-      order_id: String(orderId || '').trim(), // Alias
-      amount: Number(amount || 0),
-      customer_name: String(customer_name || '').trim(),
-      customerName: String(customer_name || '').trim(), // Alias
-      name: String(customer_name || '').trim(), // Alias
+      amount: resolvedAmount,
+      customerName: resolvedName,
       email: String(email || '').trim().toLowerCase(),
-      phone: String(phone || '').trim(),
+      phone: resolvedPhone,
+      productName: String(product_name || '').trim(),
+      
+      // Explicit Meshulam/Make requirements for the Scenario
+      name: resolvedName,
+      fullName: resolvedName,
+      price: resolvedAmount,
+      
+      // Standard aliases
+      order_id: String(orderId || '').trim(),
+      customer_name: resolvedName,
       product_name: String(product_name || '').trim(),
-      productName: String(product_name || '').trim(), // Alias
+      
+      // Address fields
       city: String(city || '').trim(),
       street: String(street || '').trim(),
       houseNumber: String(houseNumber || '').trim(),
       apartment: String(apartment || '').trim(),
       zipCode: String(zipCode || '').trim(),
-      address: `${String(street || '').trim()} ${String(houseNumber || '').trim()}, ${String(city || '').trim()}`, // Formatted address
+      address: `${String(street || '').trim()} ${String(houseNumber || '').trim()}, ${String(city || '').trim()}`,
       timestamp: new Date().toISOString(),
     };
 
@@ -306,25 +415,9 @@ async function startServer() {
       return res.json({ success: true, message: "Order notifications disabled" });
     }
 
-    // Robust recipient collection
-    let rawRecipients: any[] = [];
-    const sourceEmails = adminEmails || adminEmail;
-    
-    if (Array.isArray(sourceEmails)) {
-      rawRecipients = sourceEmails;
-    } else if (sourceEmails) {
-      rawRecipients = [sourceEmails];
-    } else {
-      rawRecipients = [process.env.CONTACT_EMAIL || 'teamind50@gmail.com'];
-    }
+    const recipients = getRecipients(adminEmails, adminEmail);
 
-    // Clean and validate recipients
-    const recipients = Array.from(new Set(rawRecipients))
-      .map(r => String(r || '').trim())
-      .filter(r => r && r.includes('@'));
-
-    console.log(`[OrderNotify] Notification setting (nSetting): "${nSetting}"`);
-    console.log(`[OrderNotify] Customer details: Name=${customerName}, Email=${customerEmail}`);
+    console.log(`[OrderNotify] Order ${orderId}. Recipients: ${recipients.join(', ')}`);
 
     try {
       let adminResult = null;
@@ -333,109 +426,114 @@ async function startServer() {
       // 1. Email to Admin
       if (nSetting === 'both' || nSetting === 'admin') {
         if (recipients.length > 0) {
-          console.log(`[OrderNotify] Attempting to send to ${recipients.length} recipients...`);
+          console.log(`[OrderNotify] Sending Admin Notifications to: ${recipients.join(', ')}`);
           
-          for (const recipient of recipients) {
-            try {
-              const senderEmail = process.env.RESEND_SENDER_EMAIL || 'support@teamindprogram.com';
-              const { data, error } = await resend.emails.send({
-                from: `TEAMIND <${senderEmail}>`,
-                to: [recipient],
-                subject: `New Order #${orderId} - ${customerName}`,
-                html: `
-                  <div style="font-family: sans-serif; padding: 30px; border: 1px solid #eee; border-radius: 20px; max-width: 600px; margin: 0 auto;">
-                    <h2 style="color: #0d9488; border-bottom: 20px solid #0d9488; padding-bottom: 10px;">New Order Received!</h2>
-                    
-                    <div style="margin: 20px 0;">
-                      <p style="font-size: 18px;"><strong>Order ID:</strong> #${orderId}</p>
-                      <p><strong>Program:</strong> ${program}</p>
-                      <p><strong>Amount:</strong> ₪${amount}</p>
-                    </div>
-
-                    <div style="background: #f9fafb; padding: 20px; border-radius: 15px; margin-bottom: 20px;">
-                      <h3 style="margin-top: 0; color: #334155;">Customer Details</h3>
-                      <p><strong>Name:</strong> ${customerName}</p>
-                      <p><strong>Email:</strong> ${customerEmail}</p>
-                      <p><strong>Phone:</strong> ${phone}</p>
-                    </div>
-
-                    ${shippingAddress ? `
-                    <div style="background: #f0fdfa; padding: 20px; border-radius: 15px; border: 1px solid #ccfbf1;">
-                      <h3 style="margin-top: 0; color: #0f766e;">Shipping Address</h3>
-                      <p style="margin-bottom: 0;">
-                        ${shippingAddress.street || ''} ${shippingAddress.houseNumber || ''}<br/>
-                        ${shippingAddress.apartment ? `דירה ${shippingAddress.apartment}<br/>` : ''}
-                        ${shippingAddress.city || ''}<br/>
-                        ${shippingAddress.zipCode ? `מיקוד: ${shippingAddress.zipCode}` : ''}
-                      </p>
-                    </div>
-                    ` : ''}
-
-                    <div style="margin-top: 30px; text-align: center;">
-                      <a href="https://teamindprogram.com/teamind-secure-portal-2024-v2" 
-                         style="background: #0d9488; color: white; padding: 12px 25px; text-decoration: none; border-radius: 50px; font-weight: bold;">
-                         View in Admin Panel
-                      </a>
-                    </div>
+          const senderEmail = process.env.RESEND_SENDER_EMAIL || 'support@teamindprogram.com';
+          const orderDate = formatDateForEmail();
+          
+          const emailPromises = recipients.map(recipient => 
+            resend.emails.send({
+              from: `TEAMIND <${senderEmail}>`,
+              to: [recipient],
+              subject: `New Order #${orderId} - ${customerName}`,
+              html: `
+                <div style="font-family: sans-serif; padding: 30px; border: 1px solid #eee; border-radius: 20px; max-width: 600px; margin: 0 auto;">
+                  <h2 style="color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 10px; margin-bottom: 20px;">New Order Received!</h2>
+                  
+                  <div style="margin: 20px 0;">
+                    <p style="font-size: 18px;"><strong>Date:</strong> ${orderDate}</p>
+                    <p style="font-size: 18px;"><strong>Order ID:</strong> <span dir="ltr">#${orderId}</span></p>
+                    <p><strong>Program:</strong> ${program}</p>
+                    <p><strong>Amount:</strong> ₪${amount}</p>
                   </div>
-                `,
-              });
-              if (error) {
-                console.error(`[OrderNotify] Resend error for recipient ${recipient}:`, error);
-              } else {
-                console.log(`[OrderNotify] Successfully sent to ${recipient}. ID: ${data?.id}`);
-                adminResult = data;
-              }
-            } catch (err) {
-              console.error(`[OrderNotify] Exception sending to ${recipient}:`, err);
+
+                  <div style="background: #f9fafb; padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+                    <h3 style="margin-top: 0; color: #334155;">Customer Details</h3>
+                    <p><strong>Name:</strong> ${customerName}</p>
+                    <p><strong>Email:</strong> ${customerEmail}</p>
+                    <p><strong>Phone:</strong> ${phone}</p>
+                  </div>
+
+                  ${shippingAddress ? `
+                  <div style="background: #f0fdfa; padding: 20px; border-radius: 15px; border: 1px solid #ccfbf1;">
+                    <h3 style="margin-top: 0; color: #0f766e;">Shipping Address</h3>
+                    <p style="margin-bottom: 0;">
+                      ${shippingAddress.street || ''} ${shippingAddress.houseNumber || ''}<br/>
+                      ${shippingAddress.apartment ? `דירה ${shippingAddress.apartment}<br/>` : ''}
+                      ${shippingAddress.city || ''}<br/>
+                      ${shippingAddress.zipCode ? `מיקוד: ${shippingAddress.zipCode}` : ''}
+                    </p>
+                  </div>
+                  ` : ''}
+
+                  <div style="margin-top: 30px; text-align: center;">
+                    <a href="https://teamindprogram.com/teamind-secure-portal-2024-v2" 
+                       style="background: #0d9488; color: white; padding: 12px 25px; text-decoration: none; border-radius: 50px; font-weight: bold;">
+                       View in Admin Panel
+                    </a>
+                  </div>
+                </div>
+              `,
+            })
+          );
+
+          const results = await Promise.allSettled(emailPromises);
+          results.forEach((res, idx) => {
+            if (res.status === 'fulfilled' && !res.value.error) {
+              console.log(`[OrderNotify] Success for admin ${recipients[idx]}`);
+              adminResult = res.value.data;
+            } else {
+              const error = res.status === 'fulfilled' ? (res.value.error || 'Unknown Error') : res.reason;
+              console.error(`[OrderNotify] Failure for admin ${recipients[idx]}:`, error);
             }
-          }
+          });
         } else {
-          console.warn("[OrderNotify] No valid admin recipients found.");
+          console.warn("[OrderNotify] No admin recipients found. Notification setting was:", nSetting);
         }
       }
 
       // 2. Email to Client
       if (nSetting === 'both' || nSetting === 'sender' || nSetting === 'customer') {
         try {
+          console.log(`[OrderNotify] Sending Client Notification to: ${customerEmail}`);
           const senderEmail = process.env.RESEND_SENDER_EMAIL || 'support@teamindprogram.com';
           const isHe = language === 'he';
           
-          const subject = isHe ? `אישור הזמנה #${orderId} - TEAMIND` : `Order Confirmation #${orderId} - TEAMIND`;
+          const subject = isHe ? `TEAMIND - אישור הזמנה #${orderId}` : `Order Confirmation #${orderId} - TEAMIND`;
           const html = isHe ? `
               <div style="font-family: sans-serif; padding: 30px; border: 1px solid #eee; border-radius: 20px; max-width: 600px; margin: 0 auto; direction: rtl; text-align: right;">
-                <h2 style="color: #0d9488; border-bottom: 20px solid #0d9488; padding-bottom: 10px;">אישור הזמנה</h2>
+                <h2 style="color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 10px; margin-bottom: 20px;">אישור הזמנה</h2>
                 <p>שלום ${customerName},</p>
                 <p>תודה על הרכישה! קיבלנו את הזמנתך עבור <strong>${program}</strong>.</p>
                 
                 <div style="margin: 20px 0; background: #f9fafb; padding: 20px; border-radius: 15px;">
-                  <p><strong>מספר הזמנה:</strong> #${orderId}</p>
-                <p><strong>סכום ששולם:</strong> ₪${amount}</p>
-              </div>
+                  <p><strong>מספר הזמנה:</strong> <span dir="ltr">#${orderId}</span></p>
+                  <p><strong>סכום ששולם:</strong> ₪${amount}</p>
+                </div>
 
-              <p>אנו מכינים את הערכה שלך למשלוח. תקבל/י הודעת דוא"ל נוספת ברגע שהיא תצא לדרך.</p>
-              
-              <p>אם יש לך שאלות, ניתן להשיב למייל זה.</p>
-              
-              <p>בברכה,<br/><strong>צוות TEAMIND</strong></p>
-            </div>
+                <p>אנו מכינים את הערכה שלך למשלוח. תקבל/י הודעת דוא"ל נוספת ברגע שהיא תצא לדרך.</p>
+                
+                <p>אם יש לך שאלות, ניתן להשיב למייל זה.</p>
+                
+                <p>בברכה,<br/><strong>צוות TEAMIND</strong></p>
+              </div>
           ` : `
               <div style="font-family: sans-serif; padding: 30px; border: 1px solid #eee; border-radius: 20px; max-width: 600px; margin: 0 auto; direction: ltr;">
-                <h2 style="color: #0d9488; border-bottom: 20px solid #0d9488; padding-bottom: 10px;">Order Confirmation</h2>
+                <h2 style="color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 10px; margin-bottom: 20px;">Order Confirmation</h2>
                 <p>Hi ${customerName},</p>
                 <p>Thank you for your purchase! We've received your order for the <strong>${program}</strong>.</p>
                 
                 <div style="margin: 20px 0; background: #f9fafb; padding: 20px; border-radius: 15px;">
-                  <p><strong>Order ID:</strong> #${orderId}</p>
-                <p><strong>Amount Paid:</strong> ₪${amount}</p>
-              </div>
+                  <p><strong>Order ID:</strong> <span dir="ltr">#${orderId}</span></p>
+                  <p><strong>Amount Paid:</strong> ₪${amount}</p>
+                </div>
 
-              <p>We are preparing your kit for shipment. You will receive another email once it's on its way.</p>
-              
-              <p>If you have any questions, feel free to reply to this email.</p>
-              
-              <p>Best regards,<br/><strong>The TEAMIND Team</strong></p>
-            </div>
+                <p>We are preparing your kit for shipment. You will receive another email once it's on its way.</p>
+                
+                <p>If you have any questions, feel free to reply to this email.</p>
+                
+                <p>Best regards,<br/><strong>The TEAMIND Team</strong></p>
+              </div>
           `;
 
           const { data, error } = await resend.emails.send({
@@ -444,13 +542,18 @@ async function startServer() {
             replyTo: process.env.CONTACT_EMAIL || 'teamind50@gmail.com',
             subject: subject,
             html: html,
-        });
-        if (error) console.error("[OrderNotify] Resend error (client):", error);
-        clientResult = data;
-      } catch (clientResendErr) {
-        console.error("[OrderNotify] Resend Exception (client):", clientResendErr);
+          });
+          
+          if (error) {
+            console.error("[OrderNotify] Resend error (client):", error);
+          } else {
+            console.log(`[OrderNotify] Success for client ${customerEmail}`);
+            clientResult = data;
+          }
+        } catch (clientResendErr) {
+          console.error("[OrderNotify] Resend Exception (client):", clientResendErr);
+        }
       }
-    }
 
       res.json({ success: true, adminResult, clientResult });
     } catch (err: any) {

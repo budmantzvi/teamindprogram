@@ -41,11 +41,20 @@ export const processOrderSuccess = async (orderId: string, siteConfig: any) => {
     // 3. Send notification
     console.log("Triggering order notification API...");
     try {
-      // Use selected admins if list is not empty, otherwise fallback to primary contact
+      // Use selected admins if list is not empty, otherwise fallback to all known admins or the primary contact
       const selectedAdmins = siteConfig?.orderNotificationAdmins || [];
-      const adminEmails = selectedAdmins.length > 0 
-        ? selectedAdmins.filter(email => email && email.includes('@'))
-        : [siteConfig?.contactEmail || 'teamind50@gmail.com'];
+      const allAdmins = siteConfig?.allAdmins || [];
+      
+      let adminEmails: string[] = [];
+      
+      if (selectedAdmins.length > 0) {
+        adminEmails = selectedAdmins.filter((email: string) => email && email.includes('@'));
+      } else if (allAdmins.length > 0) {
+        adminEmails = allAdmins.filter((email: string) => email && email.includes('@'));
+      } else if (siteConfig?.contactEmail) {
+        // Split by comma just in case
+        adminEmails = siteConfig.contactEmail.split(',').map((s: string) => s.trim()).filter((e: string) => e.includes('@'));
+      }
 
       const response = await fetch('/api/order-notification', {
         method: 'POST',

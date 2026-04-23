@@ -124,6 +124,10 @@ export const MakePaymentButton: React.FC<MakePaymentButtonProps> = ({
         houseNumber: shippingAddress?.houseNumber || '',
         apartment: shippingAddress?.apartment || '',
         zipCode: shippingAddress?.zipCode || '',
+        // Explicitly map keys that Make/Meshulam often require at the top level
+        name: customerName,
+        fullName: customerName,
+        price: Number(amount)
       };
 
       const response = await fetch('/api/make-payment', {

@@ -3,7 +3,7 @@ import { db } from './firebase';
 import { doc, collection, getDoc, getDocs, onSnapshot } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { ShieldAlert } from 'lucide-react';
-import { DEFAULT_CONFIG, deepMergeConfig, migrateConfig } from './constants';
+import { DEFAULT_CONFIG, deepMergeConfig, migrateConfig, FALLBACK_IMAGES } from './constants';
 import { useTranslation } from 'react-i18next';
 
 interface SiteContextType {
@@ -23,12 +23,12 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const cached = localStorage.getItem('cached_site_images');
       if (cached) {
-        return JSON.parse(cached);
+        return { ...FALLBACK_IMAGES, ...JSON.parse(cached) };
       }
     } catch (e) {
       console.warn("localStorage is not available.");
     }
-    return {};
+    return { ...FALLBACK_IMAGES };
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -144,13 +144,17 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         
         if (Object.keys(imagesData).length > 0) {
-          setSiteImages(imagesData);
+          setSiteImages({ ...FALLBACK_IMAGES, ...imagesData });
           try {
             localStorage.setItem('cached_site_images', JSON.stringify(imagesData));
           } catch (e) {}
+        } else {
+          // If Firestore returns empty list (but didn't error), keep fallbacks
+          setSiteImages({ ...FALLBACK_IMAGES });
         }
       }, (err) => {
         console.error("SiteContext Images Snapshot Error:", err);
+        // On error (like Quota Exceeded), we already have the fallbacks in state or from cache
       });
 
     } catch (err) {

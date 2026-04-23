@@ -140,11 +140,20 @@ export const ContactForm = () => {
 
     const emailNotifications = siteConfig?.emailNotifications || 'both';
     
-    // Use selected admins if list is not empty, otherwise fallback to primary contact
+    // Use selected admins if list is not empty, otherwise fallback to all known admins or the primary contact
     const selectedAdmins = siteConfig?.notificationAdmins || [];
-    const targetAdminEmails = selectedAdmins.length > 0 
-      ? selectedAdmins.filter((email: string) => email && email.includes('@'))
-      : [siteConfig?.contactEmail || 'teamind50@gmail.com'];
+    const allAdmins = siteConfig?.allAdmins || [];
+    
+    let targetAdminEmails: string[] = [];
+    
+    if (selectedAdmins.length > 0) {
+      targetAdminEmails = selectedAdmins.filter((email: string) => email && email.includes('@'));
+    } else if (allAdmins.length > 0) {
+      targetAdminEmails = allAdmins.filter((email: string) => email && email.includes('@'));
+    } else if (siteConfig?.contactEmail) {
+      // Split by comma just in case the user entered multiple in the text field
+      targetAdminEmails = siteConfig.contactEmail.split(',').map((s: string) => s.trim()).filter((e: string) => e.includes('@'));
+    }
 
     console.log("Submitting contact form...", { data, recipients: targetAdminEmails, setting: emailNotifications });
     try {
@@ -351,7 +360,7 @@ export const Navbar = () => {
 
   const navLinks = [
     { name: t('nav.home'), href: "/" },
-    { name: t('nav.about'), href: "/#about" },
+    { name: t('nav.about'), href: "/about" },
     { name: t('nav.programs'), href: "/#program" },
     { name: t('nav.founders'), href: "/#founders" },
   ];
@@ -489,7 +498,7 @@ export const Footer = () => {
             <h4 className="text-lg font-serif font-bold mb-6">{t('footer.company')}</h4>
             <ul className="space-y-4">
               <li><Link to="/#founders" className="text-slate-500 hover:text-teal-600 transition-colors font-medium">{t('nav.founders')}</Link></li>
-              <li><Link to="/#about" className="text-slate-500 hover:text-teal-600 transition-colors font-medium">{t('nav.about')}</Link></li>
+              <li><Link to="/about" className="text-slate-500 hover:text-teal-600 transition-colors font-medium">{t('nav.about')}</Link></li>
             </ul>
           </div>
           <div>
