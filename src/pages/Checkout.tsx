@@ -24,7 +24,7 @@ const CheckoutPage = () => {
   };
   
   const productName = getLocalizedProgramName(rawProgram);
-  const kitPrice = siteConfig?.kitPrice || 799;
+  const kitPrice = siteConfig?.kitPrice || 2300;
   
   const [formData, setFormData] = useState({
     name: '',
