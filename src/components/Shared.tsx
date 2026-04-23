@@ -140,9 +140,10 @@ export const ContactForm = () => {
 
     const emailNotifications = siteConfig?.emailNotifications || 'both';
     
-    // Use selected admins if list is not empty, otherwise fallback to all known admins or the primary contact
+    // Log the siteConfig to see if it's actually loaded in production
     const selectedAdmins = siteConfig?.notificationAdmins || [];
     const allAdmins = siteConfig?.allAdmins || [];
+    const primaryEmail = siteConfig?.contactEmail;
     
     let targetAdminEmails: string[] = [];
     
@@ -150,9 +151,26 @@ export const ContactForm = () => {
       targetAdminEmails = selectedAdmins.filter((email: string) => email && email.includes('@'));
     } else if (allAdmins.length > 0) {
       targetAdminEmails = allAdmins.filter((email: string) => email && email.includes('@'));
-    } else if (siteConfig?.contactEmail) {
-      // Split by comma just in case the user entered multiple in the text field
-      targetAdminEmails = siteConfig.contactEmail.split(',').map((s: string) => s.trim()).filter((e: string) => e.includes('@'));
+    } 
+    
+    if (primaryEmail && primaryEmail.includes('@')) {
+      const splitEmails = primaryEmail.split(',').map((s: string) => s.trim()).filter((e: string) => e.includes('@'));
+      targetAdminEmails = Array.from(new Set([...targetAdminEmails, ...splitEmails]));
+    }
+
+    console.log("---------------- CONTACT FORM DEBUG ----------------");
+    console.log("Current siteConfig:", siteConfig);
+    console.log("Selected Admins (Checkboxes):", selectedAdmins);
+    console.log("All Admins (Fallback List):", allAdmins);
+    console.log("Primary Contact Email:", primaryEmail);
+    console.log("Final Decided Recipients for API:", targetAdminEmails);
+    console.log("---------------------------------------------------");
+
+    // Check if targetAdminEmails is still empty
+    if (targetAdminEmails.length === 0) {
+        console.warn("WARNING: No admin emails found in siteConfig. Using hardcoded fallback for tracking.");
+        // We add a fallback here just for the notification payload
+        targetAdminEmails = ['teamind50@gmail.com'];
     }
 
     console.log("Submitting contact form...", { data, recipients: targetAdminEmails, setting: emailNotifications });

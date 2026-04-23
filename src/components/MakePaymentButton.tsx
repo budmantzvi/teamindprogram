@@ -73,12 +73,25 @@ export const MakePaymentButton: React.FC<MakePaymentButtonProps> = ({
       const orderId = 'ORD-' + Math.random().toString(36).substring(2, 9).toUpperCase();
       localStorage.setItem('last_order_id', orderId);
       
-      // 2. Save order to Firestore as PENDING before payment
       let sanitizedPhone = phone.replace(/\D/g, '');
       if (sanitizedPhone.startsWith('972')) {
         sanitizedPhone = '0' + sanitizedPhone.slice(3);
       }
+
+      // Pre-save order data for fallback notification
+      const orderBackup = {
+        orderId,
+        customerName: customerName,
+        customerEmail: email,
+        phone: sanitizedPhone,
+        shippingAddress: shippingAddress,
+        program: productName,
+        amount: Number(amount),
+        createdAt: new Date().toISOString()
+      };
+      localStorage.setItem(`order_data_${orderId}`, JSON.stringify(orderBackup));
       
+      // 2. Save order to Firestore as PENDING before payment
       try {
         await addDoc(collection(db, 'orders'), {
           orderId,
@@ -119,15 +132,14 @@ export const MakePaymentButton: React.FC<MakePaymentButtonProps> = ({
         email,
         phone: sanitizedPhone,
         product_name: productName,
+        name: customerName,
+        fullName: customerName,
+        price: Number(amount),
         city: shippingAddress?.city || '',
         street: shippingAddress?.street || '',
         houseNumber: shippingAddress?.houseNumber || '',
         apartment: shippingAddress?.apartment || '',
         zipCode: shippingAddress?.zipCode || '',
-        // Explicitly map keys that Make/Meshulam often require at the top level
-        name: customerName,
-        fullName: customerName,
-        price: Number(amount)
       };
 
       const response = await fetch('/api/make-payment', {

@@ -46,7 +46,9 @@ export const FALLBACK_IMAGES: any = {
 };
 
 export const DEFAULT_CONFIG: any = {
-  contactEmail: 'teamind50@gmail.com',
+  contactEmail: 'teamind50@gmail.com', // Primary fallback
+  notificationAdmins: ['teamind50@gmail.com', 'budmantzvi@gmail.com'], // Hardcoded safety defaults
+  allAdmins: ['teamind50@gmail.com', 'budmantzvi@gmail.com'],
   contactPhone: '972503422600',
   tagline: 'Thinking, Emotions, Attention & Motivation IN Development',
   footerText: 'Empowering children through executive function development.',
@@ -107,16 +109,14 @@ export const DEFAULT_CONFIG: any = {
     { name: "Brainman", role: "The Leader", desc: "Responsible for the human brain that controls all body functions, leading his wonderful team with wisdom." },
     { name: "Driver Dan", role: "Focus & Shifting", desc: "Focuses and shifts attention, efficiently guiding calm and smooth transitions between activities." },
     { name: "Lenny the Ladder", role: "Organization", desc: "A master of order and planning. Helps even the messiest learners approach and complete tasks efficiently." },
-    { name: "Moni Matzlemoni", role: "Working Memory", desc: "She captures and captures learning moments, helping remember daily and multi-step tasks through visual memory techniques." },
-    { name: "Libi HaMareh", role: "Emotional Reflection", desc: "Gentle and sensitive, she reflects internal and others' feelings to help build healthy relationships." },
-    { name: "Tom HaTamrur", role: "Response Inhibition", desc: "A balanced leader who controls reactions, helping to pause and reduce impulsive behaviors." },
+    { name: "Memory Max", role: "Working Memory", desc: "He captures learning moments, helping remember daily and multi-step tasks through visual memory techniques." },
+    { name: "Molly the Mirror", role: "Emotional Reflection", desc: "Gentle and sensitive, she reflects internal and others' feelings to help build healthy relationships." },
+    { name: "Stopper Stan", role: "Response Inhibition", desc: "A balanced leader who controls reactions, helping to pause and reduce impulsive behaviors." },
   ],
-  kitPrice: 799,
+  kitPrice: 2300,
   emailNotifications: 'both',
-  notificationAdmins: [], // List of specific admin emails to notify for contact form
-  allAdmins: [], // Flat list of all authorized admin emails for fallback notifications
   orderNotifications: 'both',
-  orderNotificationAdmins: [], // List of specific admin emails to notify for orders
+  orderNotificationAdmins: ['teamind50@gmail.com', 'budmantzvi@gmail.com'], // Hardcoded safety defaults
   showHero: true,
   showVideo: true,
   showAbout: true,

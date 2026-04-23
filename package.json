@@ -15,7 +15,6 @@
     "@google/genai": "^1.29.0",
     "@hookform/resolvers": "^5.2.2",
     "@paypal/react-paypal-js": "^9.1.0",
-    "@stripe/stripe-js": "^9.0.0",
     "@tailwindcss/vite": "^4.1.14",
     "@vercel/analytics": "^2.0.1",
     "@vercel/edge": "^1.2.2",
@@ -38,7 +37,6 @@
     "react-router-dom": "^7.13.2",
     "resend": "^6.9.4",
     "sonner": "^2.0.7",
-    "stripe": "^21.0.1",
     "vite": "^6.2.0",
     "zod": "^4.3.6"
   },

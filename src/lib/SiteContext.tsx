@@ -98,21 +98,21 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     let unsubConfig = () => {};
     let unsubImages = () => {};
+ 
+    const isAdminPath = window.location.pathname.includes('/teamind-secure-portal');
+    
+    const loadSiteData = async () => {
+      try {
+        setLoading(true);
 
-    try {
-      setLoading(true);
-
-      // Realtime listener for website config
-      unsubConfig = onSnapshot(doc(db, 'config', 'site'), (configSnap) => {
-        setLoading(false);
-        setError(null);
-        if (configSnap.exists()) {
-          const data = configSnap.data();
+        const processConfigData = (data: any) => {
           const { images: _ignored, ...rest } = data;
           const migrated = migrateConfig(rest);
           const finalConfig = deepMergeConfig(DEFAULT_CONFIG, migrated);
           setSiteConfig(finalConfig);
-
+          // Auto-cache
+          try { localStorage.setItem('cached_site_config', JSON.stringify(data)); } catch (e) {}
+          
           // Admin default language setting
           if (finalConfig.defaultLanguage && 
               !localStorage.getItem('user_language_override') && 
@@ -121,46 +121,100 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
               i18n.changeLanguage(finalConfig.defaultLanguage);
             }
           }
-        }
-      }, (err: any) => {
-        console.error("SiteContext Config Snapshot Error:", err);
-        setLoading(false);
-        const isA = window.location.pathname === '/teamind-secure-portal-2024-v2';
-        if (err.code === 'resource-exhausted') {
-          setError("Daily database limit reached (Quota Exceeded).");
-          if (isA) toast.error("Daily database limit reached. Some content may not load.");
-        } else if (!navigator.onLine) {
-          setError("No internet connection.");
-        } else {
-          setError("Failed to load site configuration.");
-        }
-      });
+        };
 
-      // Realtime listener for site images
-      unsubImages = onSnapshot(collection(db, 'siteImages'), (imagesSnap) => {
-        const imagesData: any = {};
-        imagesSnap.forEach(doc => {
-          imagesData[doc.id] = doc.data().url;
-        });
-        
-        if (Object.keys(imagesData).length > 0) {
-          setSiteImages({ ...FALLBACK_IMAGES, ...imagesData });
+        // 1. Initial Load from LocalStorage (Sync)
+        try {
+          const cachedConfig = localStorage.getItem('cached_site_config');
+          if (cachedConfig) {
+            const data = JSON.parse(cachedConfig);
+            processConfigData(data);
+          }
+        } catch (e) {
+          console.warn("Failed to load cached config");
+        }
+
+        // 2. Resolve Config
+        const configRef = doc(db, 'config', 'site');
+
+        if (isAdminPath) {
+          // Admin needs real-time
+          unsubConfig = onSnapshot(configRef, (snap) => {
+            if (snap.exists()) processConfigData(snap.data());
+            setLoading(false);
+          }, (err) => {
+            handleConfigError(err);
+            // If it's a quota error, we stop trying the realtime but keep the loading state finished
+            if (err.code === 'resource-exhausted') {
+              setLoading(false);
+            }
+          });
+        } else {
+          // Public users get one-time fetch to save quota
           try {
-            localStorage.setItem('cached_site_images', JSON.stringify(imagesData));
-          } catch (e) {}
-        } else {
-          // If Firestore returns empty list (but didn't error), keep fallbacks
-          setSiteImages({ ...FALLBACK_IMAGES });
+            const configSnap = await getDoc(configRef);
+            if (configSnap.exists()) processConfigData(configSnap.data());
+          } catch (err: any) {
+            if (err.code === 'resource-exhausted') {
+              console.warn("Quota exceeded for config fetch, using cache/defaults");
+            } else {
+              throw err;
+            }
+          }
+          setLoading(false);
         }
-      }, (err) => {
-        console.error("SiteContext Images Snapshot Error:", err);
-        // On error (like Quota Exceeded), we already have the fallbacks in state or from cache
-      });
 
-    } catch (err) {
-      console.error("SiteContext Init Error:", err);
+        // 3. Load Images
+        const imagesRef = collection(db, 'siteImages');
+        const processImagesData = (snap: any) => {
+          const imagesData: any = {};
+          // Snapshot can be from getDocs (QuerySnapshot) or onSnapshot (QuerySnapshot)
+          if (snap.forEach) {
+            snap.forEach((doc: any) => {
+              imagesData[doc.id] = doc.data().url;
+            });
+          }
+          
+          if (Object.keys(imagesData).length > 0) {
+            setSiteImages({ ...FALLBACK_IMAGES, ...imagesData });
+            try { localStorage.setItem('cached_site_images', JSON.stringify(imagesData)); } catch (e) {}
+          }
+        };
+
+        if (isAdminPath) {
+          unsubImages = onSnapshot(imagesRef, (snap) => {
+            processImagesData(snap);
+          }, (err) => {
+            console.warn("Images realtime error:", err);
+          });
+        } else {
+          try {
+            const imagesSnap = await getDocs(imagesRef);
+            processImagesData(imagesSnap);
+          } catch (err: any) {
+            if (err.code === 'resource-exhausted') {
+              console.warn("Quota exceeded for images fetch, using cache/fallback");
+            }
+          }
+        }
+
+      } catch (err) {
+        console.error("SiteContext Init Error:", err);
+        setLoading(false);
+      }
+    };
+
+    const handleConfigError = (err: any) => {
+      console.error("SiteContext Config Error:", err);
       setLoading(false);
-    }
+      if (err.code === 'resource-exhausted') {
+        setError("Daily database limit reached (Quota Exceeded).");
+      } else {
+        setError("Failed to load site configuration.");
+      }
+    };
+
+    loadSiteData();
 
     return () => {
       window.removeEventListener('online', handleOnline);

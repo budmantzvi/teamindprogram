@@ -3,10 +3,17 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import { Resend } from "resend";
-import Stripe from "stripe";
 import dotenv from "dotenv";
 
 dotenv.config();
+
+console.log("================ SERVER STARTUP ================");
+console.log("NODE_ENV:", process.env.NODE_ENV);
+console.log("RESEND_API_KEY:", process.env.RESEND_API_KEY ? "EXISTS (Starts with " + process.env.RESEND_API_KEY.substring(0, 5) + "...)" : "MISSING");
+console.log("RESEND_SENDER_EMAIL:", process.env.RESEND_SENDER_EMAIL || "NOT SET (Defaulting to support@teamindprogram.com)");
+console.log("CONTACT_EMAIL:", process.env.CONTACT_EMAIL || "NOT SET");
+console.log("MAKE_PAYMENT_WEBHOOK_URL:", process.env.MAKE_PAYMENT_WEBHOOK_URL ? "EXISTS" : "MISSING");
+console.log("================================================");
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,9 +22,6 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 if (!process.env.RESEND_API_KEY) {
   console.warn("WARNING: RESEND_API_KEY is not set. Email notifications will fail.");
 }
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2023-10-16" as any,
-});
 
 /**
  * Helper to get validated recipients from various sources
@@ -26,53 +30,52 @@ const getRecipients = (adminEmails: any, adminEmail: any, fallback: string = 'te
   let raw: any[] = [];
   const normalizedFallback = fallback.toLowerCase().trim();
 
-  console.log("[getRecipients] Debugging recipient selection...");
-  console.log("[getRecipients] Received adminEmails from client:", JSON.stringify(adminEmails));
-  console.log("[getRecipients] Received adminEmail from client:", JSON.stringify(adminEmail));
+  // DEBUG: Track exactly what's arriving from the client
+  console.log(`[getRecipients] DEBUG START: adminEmails=${JSON.stringify(adminEmails)}, adminEmail=${JSON.stringify(adminEmail)}`);
 
-  // 1. Process client-provided emails (The Admin Panel settings)
-  if (Array.isArray(adminEmails)) {
-    adminEmails.forEach(item => {
-      if (typeof item === 'string') {
-        item.split(',').forEach(s => raw.push(s.trim()));
-      } else {
-        if (item) raw.push(item);
-      }
-    });
-  } else if (typeof adminEmails === 'string' && adminEmails.trim()) {
-    adminEmails.split(',').forEach(s => raw.push(s.trim()));
+  const processInput = (input: any) => {
+    if (!input) return;
+    if (Array.isArray(input)) {
+      input.forEach(item => {
+        if (typeof item === 'string' && item.trim()) {
+          item.split(',').forEach(s => raw.push(s.trim()));
+        } else if (item && typeof item === 'object' && item.email) {
+          raw.push(item.email);
+        }
+      });
+    } else if (typeof input === 'string' && input.trim()) {
+      input.split(',').forEach(s => raw.push(s.trim()));
+    }
+  };
+
+  processInput(adminEmails);
+  processInput(adminEmail);
+
+  // Filter and deduplicate
+  const cleanEmails = Array.from(new Set(
+    raw.map(e => String(e || '').trim().toLowerCase())
+       .filter(e => e && e.includes('@'))
+  ));
+
+  if (cleanEmails.length > 0) {
+    console.log(`[getRecipients] SUCCESS: Valid UI recipients found: [${cleanEmails.join(', ')}]`);
+    return cleanEmails;
   }
 
-  if (typeof adminEmail === 'string' && adminEmail.trim()) {
-    adminEmail.split(',').forEach(s => raw.push(s.trim()));
-  }
+  console.log("[getRecipients] INFO: No UI recipients found. Checking server ENV variables...");
 
-  const filterEmails = (list: any[]) => list
-    .map(email => String(email || '').trim().toLowerCase())
-    .filter(email => email && email.includes('@'));
-
-  let clientEmails = filterEmails(raw);
-
-  // LOGIC:
-  // If the admin has set specific recipients in the UI, use them.
-  if (clientEmails.length > 0) {
-    console.log(`[getRecipients] SUCCESS: Using Admin Panel UI recipients: [${clientEmails.join(', ')}]`);
-    return Array.from(new Set(clientEmails));
-  }
-
-  console.log("[getRecipients] INFO: No valid recipients found in client request (UI). Checking Environment Variables...");
-
-  // 2. ONLY fallback to environment if NO UI settings exist
+  // Fallback 1: Environment Variable
   const envEmail = (process.env.CONTACT_EMAIL || '').trim();
-  const envEmails = envEmail.split(',').map(s => s.trim().toLowerCase()).filter(e => e.includes('@'));
-
-  if (envEmails.length > 0) {
-    console.log(`[getRecipients] FALLBACK: Using Environment Variables (CONTACT_EMAIL): [${envEmails.join(', ')}]`);
-    return Array.from(new Set(envEmails));
+  if (envEmail) {
+    const envEmails = envEmail.split(',').map(s => s.trim().toLowerCase()).filter(e => e.includes('@'));
+    if (envEmails.length > 0) {
+      console.log(`[getRecipients] FALLBACK: No UI settings found. Using CONTACT_EMAIL env: [${envEmails.join(', ')}]`);
+      return envEmails;
+    }
   }
 
-  // 3. Absolute fallback
-  console.log(`[getRecipients] WARNING: No UI settings and no ENV variables. Absolute fallback to: ${normalizedFallback}`);
+  // Fallback 2: Hardcoded safety
+  console.log(`[getRecipients] CRITICAL WARNING: No UI settings and no ENV variable found. Using hardcoded fallback: ${normalizedFallback}`);
   return [normalizedFallback];
 };
 
@@ -118,6 +121,12 @@ async function startServer() {
 
   // API Route: Contact Form
   app.post("/api/contact", async (req, res) => {
+    // 1. Ensure body is an object (Vercel/Node edge cases)
+    let bodyData = req.body;
+    if (typeof bodyData === 'string') {
+      try { bodyData = JSON.parse(bodyData); } catch (e) { console.error("Body parse error:", e); }
+    }
+
     const { 
       name, 
       email, 
@@ -128,14 +137,18 @@ async function startServer() {
       emailNotifications,
       notificationSetting,
       language
-    } = req.body;
-
+    } = bodyData || {};
 
     const nSetting = emailNotifications || notificationSetting || 'both';
     
+    // Detailed logs for debugging
+    console.log("=========================================");
+    console.log("[CONTACT API] RECEIVED DATA:", JSON.stringify(bodyData));
+    
     const recipients = getRecipients(adminEmails, adminEmail);
-
-    console.log(`[ContactForm] Submission from ${name}. Recipients: ${recipients.join(', ')}`);
+    
+    console.log(`[CONTACT API] DECIDED RECIPIENTS: ${JSON.stringify(recipients)}`);
+    console.log("=========================================");
 
     if (nSetting === 'none') {
       return res.json({ success: true, message: "Notifications disabled by admin" });
@@ -237,38 +250,6 @@ async function startServer() {
     }
   });
 
-  // API Route: Stripe Checkout
-  app.post("/api/checkout", async (req, res) => {
-    const { planId, planName, price } = req.body;
-
-    try {
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
-        line_items: [
-          {
-            price_data: {
-              currency: "usd",
-              product_data: {
-                name: `TEAMIND ${planName}`,
-                description: `Pedagogical Kit for ${planName}`,
-              },
-              unit_amount: Math.round(parseFloat(price.replace(',', '')) * 100),
-            },
-            quantity: 1,
-          },
-        ],
-        mode: "payment",
-        success_url: `${req.headers.origin}/?success=true`,
-        cancel_url: `${req.headers.origin}/?canceled=true`,
-      });
-
-      res.json({ url: session.url });
-    } catch (err: any) {
-      console.error("Stripe error:", err);
-      res.status(500).json({ error: err.message });
-    }
-  });
-
   // API Route: Make.com Payment Webhook
   app.post("/api/make-payment", async (req, res) => {
     // 1. Validate if we even have a body to prevent empty/probe requests from hitting Make
@@ -305,25 +286,26 @@ async function startServer() {
     }
 
     const payload = {
-      // Primary keys
+      // Required keys for Meshulam Scenario
+      name: resolvedName,
+      fullName: resolvedName,
+      price: resolvedAmount,
+      phone: resolvedPhone,
+      
+      // Default keys
       orderId: String(orderId || '').trim(),
       amount: resolvedAmount,
       customerName: resolvedName,
       email: String(email || '').trim().toLowerCase(),
-      phone: resolvedPhone,
       productName: String(product_name || '').trim(),
       
-      // Explicit Meshulam/Make requirements for the Scenario
-      name: resolvedName,
-      fullName: resolvedName,
-      price: resolvedAmount,
-      
-      // Standard aliases
+      // Aliases
       order_id: String(orderId || '').trim(),
       customer_name: resolvedName,
       product_name: String(product_name || '').trim(),
+      full_name: resolvedName,
       
-      // Address fields
+      // Address
       city: String(city || '').trim(),
       street: String(street || '').trim(),
       houseNumber: String(houseNumber || '').trim(),
@@ -401,6 +383,12 @@ async function startServer() {
 
   // API Route: Order Notification
   app.post("/api/order-notification", async (req, res) => {
+    // 1. Ensure body is an object (Vercel/Node edge cases)
+    let bodyData = req.body;
+    if (typeof bodyData === 'string') {
+      try { bodyData = JSON.parse(bodyData); } catch (e) { console.error("Order Body parse error:", e); }
+    }
+
     const { 
       orderId, 
       customerName, 
@@ -413,17 +401,22 @@ async function startServer() {
       adminEmail, 
       orderNotifications,
       language
-    } = req.body;
+    } = bodyData || {};
 
     const nSetting = orderNotifications || 'both';
+    
+    // Detailed logs for debugging
+    console.log("=========================================");
+    console.log("[ORDER API] RECEIVED DATA:", JSON.stringify(bodyData));
+    console.log("[ORDER API] RESEND_API_KEY STATUS:", process.env.RESEND_API_KEY ? "CONFIGURED (Starts with " + process.env.RESEND_API_KEY.substring(0, 5) + "...)" : "MISSING");
+    
+    const recipients = getRecipients(adminEmails, adminEmail);
+    console.log(`[ORDER API] DECIDED RECIPIENTS: ${JSON.stringify(recipients)}`);
+    console.log("=========================================");
 
     if (nSetting === 'none') {
       return res.json({ success: true, message: "Order notifications disabled" });
     }
-
-    const recipients = getRecipients(adminEmails, adminEmail);
-
-    console.log(`[OrderNotify] Order ${orderId}. Recipients: ${recipients.join(', ')}`);
 
     try {
       let adminResult = null;

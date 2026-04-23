@@ -3,19 +3,35 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { amount, customer_name, email, phone, product_name, shipping_address } = req.body;
+  const { orderId, amount, customer_name, email, phone, product_name, shipping_address } = req.body;
+
+  // Resolve values for Meshulam/Grow scenario
+  const resolvedName = (customer_name || req.body.name || req.body.fullName || "").toString().trim();
+  const resolvedAmount = Number(amount || req.body.price || 0);
+  const resolvedPhone = (phone || req.body.phone || "").toString().trim();
 
   const payload = {
-    amount,
-    customer_name,
-    email,
-    phone,
-    product_name,
-    city: shipping_address?.city || '',
-    street: shipping_address?.street || '',
-    houseNumber: shipping_address?.houseNumber || '',
-    apartment: shipping_address?.apartment || '',
-    zipCode: shipping_address?.zipCode || '',
+    // Required keys for Meshulam Scenario in Make.com
+    name: resolvedName,
+    fullName: resolvedName,
+    price: resolvedAmount,
+    phone: resolvedPhone,
+    
+    // Original app keys
+    orderId: orderId || req.body.orderId || '',
+    amount: resolvedAmount,
+    customer_name: resolvedName,
+    email: email || '',
+    product_name: product_name || '',
+    
+    // Address fields
+    city: shipping_address?.city || req.body.city || '',
+    street: shipping_address?.street || req.body.street || '',
+    houseNumber: shipping_address?.houseNumber || req.body.houseNumber || '',
+    apartment: shipping_address?.apartment || req.body.apartment || '',
+    zipCode: shipping_address?.zipCode || req.body.zipCode || '',
+    
+    timestamp: new Date().toISOString()
   };
 
   console.log("Sending payload to Make.com:", JSON.stringify(payload, null, 2));

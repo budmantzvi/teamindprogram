@@ -127,7 +127,7 @@ export default function Admin() {
     return () => unsubscribe();
   }, []);
 
-  // One-time auth check logic
+  // One-time auth check logic with session caching to save quota
   useEffect(() => {
     if (!user || adminFetched.current) return;
     
@@ -142,6 +142,22 @@ export default function Admin() {
       const lowerEmail = user.email.toLowerCase().trim();
       const isBootstrap = BOOTSTRAP_ADMINS.includes(lowerEmail);
 
+      // Check session storage first to save quota
+      const sessionAuthKey = `admin_auth_${lowerEmail}`;
+      const cachedAuth = sessionStorage.getItem(sessionAuthKey);
+      
+      if (cachedAuth) {
+        try {
+          const { authorized, list } = JSON.parse(cachedAuth);
+          setIsAuthorized(authorized);
+          if (list) setAuthorizedAdmins(list);
+          setConfigLoading(false);
+          return;
+        } catch (e) {
+          sessionStorage.removeItem(sessionAuthKey);
+        }
+      }
+
       try {
         // 1. First, establish current user authorization via specific doc check
         const userAdminDoc = await getDoc(doc(db, 'admins', lowerEmail));
@@ -150,24 +166,42 @@ export default function Admin() {
         const authorized = isBootstrap || isDbAdmin;
         setIsAuthorized(authorized);
 
+        let adminList: any[] = [];
         if (authorized) {
           // 2. Only if authorized, fetch the full list for the UI
-          const snap = await getDocs(collection(db, 'admins'));
-          const adminList = snap.docs.map(d => ({ email: d.id.toLowerCase(), ...d.data() }));
-          setAuthorizedAdmins(adminList);
-          
-          // Auto-persist bootstrap admins for consistency
-          if (isBootstrap && !isDbAdmin) {
-            await setDoc(doc(db, 'admins', lowerEmail), {
-              addedBy: 'system-bootstrap',
-              addedAt: new Date().toISOString()
-            });
+          try {
+            const snap = await getDocs(collection(db, 'admins'));
+            adminList = snap.docs.map(d => ({ email: d.id.toLowerCase(), ...d.data() }));
+            setAuthorizedAdmins(adminList);
+          } catch (listErr: any) {
+            console.warn("Failed to fetch admin list (likely quota), using bootstrap list");
+            adminList = BOOTSTRAP_ADMINS.map(email => ({ email }));
+            setAuthorizedAdmins(adminList);
           }
+          
+          // Auto-persist bootstrap admins for consistency if possible
+          if (isBootstrap && !isDbAdmin) {
+            try {
+              await setDoc(doc(db, 'admins', lowerEmail), {
+                addedBy: 'system-bootstrap',
+                addedAt: new Date().toISOString()
+              });
+            } catch (e) {}
+          }
+
+          // Cache in session
+          sessionStorage.setItem(sessionAuthKey, JSON.stringify({ authorized: true, list: adminList }));
+        } else {
+          sessionStorage.setItem(sessionAuthKey, JSON.stringify({ authorized: false }));
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Auth check failed:", err);
-        // If we can't fetch the list but we are bootstrap, we stay authorized
-        setIsAuthorized(isBootstrap);
+        // If we can't fetch but we are in bootstrap, allow it
+        if (isBootstrap) {
+          setIsAuthorized(true);
+        } else if (err.code === 'resource-exhausted') {
+           setDataError("Database daily limit reached. Contact support.");
+        }
       } finally {
         setConfigLoading(false);
       }
@@ -191,7 +225,11 @@ export default function Admin() {
         setDataLoading(prev => ({ ...prev, contacts: false }));
       }, (err: any) => {
         console.error("Error fetching contacts realtime:", err);
-        setDataError(err.code === 'resource-exhausted' ? "Daily limit reached." : "Failed to load contacts.");
+        if (err.code === 'resource-exhausted') {
+          setDataError("Daily database limit reached (Quota Exceeded). Contact the developer.");
+        } else {
+          setDataError("Failed to load contacts.");
+        }
         setDataLoading(prev => ({ ...prev, contacts: false }));
       });
     }
@@ -204,7 +242,11 @@ export default function Admin() {
         setDataLoading(prev => ({ ...prev, orders: false }));
       }, (err: any) => {
         console.error("Error fetching orders realtime:", err);
-        setDataError(err.code === 'resource-exhausted' ? "Daily limit reached." : "Failed to load orders.");
+        if (err.code === 'resource-exhausted') {
+          setDataError("Daily database limit reached (Quota Exceeded). Contact the developer.");
+        } else {
+          setDataError("Failed to load orders.");
+        }
         setDataLoading(prev => ({ ...prev, orders: false }));
       });
     }
