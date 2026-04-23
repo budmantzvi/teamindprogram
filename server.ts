@@ -26,20 +26,24 @@ const getRecipients = (adminEmails: any, adminEmail: any, fallback: string = 'te
   let raw: any[] = [];
   const normalizedFallback = fallback.toLowerCase().trim();
 
+  console.log("[getRecipients] Debugging recipient selection...");
+  console.log("[getRecipients] Received adminEmails from client:", JSON.stringify(adminEmails));
+  console.log("[getRecipients] Received adminEmail from client:", JSON.stringify(adminEmail));
+
   // 1. Process client-provided emails (The Admin Panel settings)
   if (Array.isArray(adminEmails)) {
     adminEmails.forEach(item => {
       if (typeof item === 'string') {
         item.split(',').forEach(s => raw.push(s.trim()));
       } else {
-        raw.push(item);
+        if (item) raw.push(item);
       }
     });
-  } else if (typeof adminEmails === 'string') {
+  } else if (typeof adminEmails === 'string' && adminEmails.trim()) {
     adminEmails.split(',').forEach(s => raw.push(s.trim()));
   }
 
-  if (typeof adminEmail === 'string') {
+  if (typeof adminEmail === 'string' && adminEmail.trim()) {
     adminEmail.split(',').forEach(s => raw.push(s.trim()));
   }
 
@@ -52,21 +56,23 @@ const getRecipients = (adminEmails: any, adminEmail: any, fallback: string = 'te
   // LOGIC:
   // If the admin has set specific recipients in the UI, use them.
   if (clientEmails.length > 0) {
-    console.log(`[getRecipients] Using Admin Panel specified recipients: [${clientEmails.join(', ')}]`);
+    console.log(`[getRecipients] SUCCESS: Using Admin Panel UI recipients: [${clientEmails.join(', ')}]`);
     return Array.from(new Set(clientEmails));
   }
+
+  console.log("[getRecipients] INFO: No valid recipients found in client request (UI). Checking Environment Variables...");
 
   // 2. ONLY fallback to environment if NO UI settings exist
   const envEmail = (process.env.CONTACT_EMAIL || '').trim();
   const envEmails = envEmail.split(',').map(s => s.trim().toLowerCase()).filter(e => e.includes('@'));
 
   if (envEmails.length > 0) {
-    console.log(`[getRecipients] No UI settings. Using Environment Variables: [${envEmails.join(', ')}]`);
+    console.log(`[getRecipients] FALLBACK: Using Environment Variables (CONTACT_EMAIL): [${envEmails.join(', ')}]`);
     return Array.from(new Set(envEmails));
   }
 
   // 3. Absolute fallback
-  console.log(`[getRecipients] No settings found. Falling back to: ${normalizedFallback}`);
+  console.log(`[getRecipients] WARNING: No UI settings and no ENV variables. Absolute fallback to: ${normalizedFallback}`);
   return [normalizedFallback];
 };
 
