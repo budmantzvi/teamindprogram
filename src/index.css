@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Heebo:wght@300;400;500;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Heebo", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Libre Baskerville", serif;
+
+  --color-brand-red: #F5877A;
+  --color-brand-orange: #FBB26E;
+  --color-brand-yellow: #F4D73C;
+  --color-brand-light-green: #C2D839;
+  --color-brand-light-blue: #499ED7;
+  --color-brand-pink: #DCAFD2;
+  --color-brand-green: #72C59A;
+
+  --color-teal-50: #f0f9f7;
+  --color-teal-100: #e0f2ef;
+  --color-teal-500: #72C59A;
+  --color-teal-600: #72C59A;
+  --color-teal-700: #5db088;
+  --color-teal-900: #3a5c4c;
+
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Optimize image rendering */
+img {
+  content-visibility: auto;
+}
+
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+  will-change: transform;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Phone Input Custom Styles */
+.phone-input-container .PhoneInput {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.phone-input-container .PhoneInputInput {
+  background: transparent;
+  border: none;
+  outline: none;
+  width: 100%;
+  font-weight: 700;
+}
+
+.phone-input-container .PhoneInputCountry {
+  display: flex;
+  align-items: center;
+}
+
+.phone-input-container .PhoneInputCountrySelect {
+  cursor: pointer;
+}
