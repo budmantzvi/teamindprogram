@@ -2,19 +2,35 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-function getRecipients(adminEmail: any) {
-  if (!adminEmail) return [process.env.CONTACT_EMAIL || 'teamind50@gmail.com'];
+function getRecipients(adminInput: any) {
+  const emailSources: string[] = [];
   
-  if (Array.isArray(adminEmail)) {
-    const valid = adminEmail.filter(e => typeof e === 'string' && e.includes('@'));
-    return valid.length > 0 ? valid : [process.env.CONTACT_EMAIL || 'teamind50@gmail.com'];
+  if (adminInput) {
+    const rawItems = Array.isArray(adminInput) ? adminInput : [adminInput];
+    rawItems.forEach(item => {
+      if (typeof item === 'string') {
+        emailSources.push(...item.split(',').map(e => e.trim()));
+      } else if (item && typeof item === 'object' && item.email) {
+        emailSources.push(String(item.email).trim());
+      } else if (item) {
+        emailSources.push(String(item).trim());
+      }
+    });
   }
-  
-  if (typeof adminEmail === 'string' && adminEmail.includes('@')) {
-    return adminEmail.split(',').map(e => e.trim()).filter(e => e.includes('@'));
+
+  if (process.env.CONTACT_EMAIL) {
+    emailSources.push(...process.env.CONTACT_EMAIL.split(',').map(e => e.trim()));
   }
-  
-  return [process.env.CONTACT_EMAIL || 'teamind50@gmail.com'];
+
+  emailSources.push('teamind50@gmail.com');
+
+  const validEmails = Array.from(new Set(
+    emailSources
+      .filter(e => e && typeof e === 'string' && e.includes('@'))
+      .map(e => e.toLowerCase().trim())
+  ));
+
+  return validEmails.length > 0 ? validEmails : ['teamind50@gmail.com'];
 }
 
 function formatDateForEmail() {
@@ -28,32 +44,35 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Handle potential stringified body
+  // Handle various body formats (Vercel/Make/Proxy issues)
   let body = req.body;
   if (typeof body === 'string') {
-    try { body = JSON.parse(body); } catch (e) {}
+    try { body = JSON.parse(body); } catch (e) {
+      console.error("[Vercel OrderNotify] Failed to parse string body:", e);
+    }
   }
 
-  const { 
-    orderId, 
-    customerName, 
-    customerEmail, 
-    phone, 
-    program, 
-    amount, 
-    shippingAddress, 
-    adminEmails, 
-    orderNotifications = 'both',
-    language = 'he'
-  } = body;
+  // Extremely flexible extraction (Aliases to support various Make/Meshulam payloads)
+  const orderId = body.orderId || body.order_id || body.transactionId || body.transaction_id || '0000';
+  const customerName = body.customerName || body.customer_name || body.name || body.fullName || 'Customer';
+  const customerEmail = body.customerEmail || body.email || body.customer_email || body.user_email || '';
+  const phone = body.phone || body.customerPhone || body.customer_phone || '';
+  const program = body.program || body.item_name || body.productName || body.product_name || body.kit_type || 'Pedagogical Kit';
+  const amount = body.amount || body.price || body.total_amount || body.total || '0';
+  const shippingAddress = body.shippingAddress || body.address || null;
+  const adminInput = body.adminEmails || body.adminEmail || body.admins || null;
+  const orderNotifications = body.orderNotifications || body.notifications || body.emailNotifications || 'both';
+  const language = body.language || 'he';
 
-  console.log(`[Vercel OrderNotify] Request for #${orderId} - ${customerName}`);
+  console.log(`[Vercel OrderNotify] Processing #${orderId} for ${customerName} (To: ${customerEmail})`);
+  console.log(`[Vercel OrderNotify] Raw body hint: ${JSON.stringify(body).slice(0, 200)}...`);
 
   if (orderNotifications === 'none') {
     return res.status(200).json({ success: true, message: "Order notifications disabled" });
   }
 
-  const recipients = getRecipients(adminEmails || body.adminEmail);
+  const recipients = getRecipients(adminInput);
+  console.log(`[Vercel OrderNotify] Resolved recipients: ${recipients.join(', ')}`);
 
   try {
     let adminResult = null;

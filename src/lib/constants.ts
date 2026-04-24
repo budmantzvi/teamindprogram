@@ -49,7 +49,7 @@ export const DEFAULT_CONFIG: any = {
   contactEmail: 'teamind50@gmail.com', // Primary fallback
   notificationAdmins: ['teamind50@gmail.com', 'budmantzvi@gmail.com'], // Hardcoded safety defaults
   allAdmins: ['teamind50@gmail.com', 'budmantzvi@gmail.com'],
-  contactPhone: '972503422600',
+  contactPhone: '972504170209',
   tagline: 'Thinking, Emotions, Attention & Motivation IN Development',
   footerText: 'Empowering children through executive function development.',
   navBtnText: 'Get Started',
@@ -64,7 +64,7 @@ export const DEFAULT_CONFIG: any = {
   aboutTitle: 'About the Program.',
   aboutText: 'TEAMIND is much more than just a pedagogical tool; it is a holistic approach to child development founded on the principle that Executive Functions (EF) are the "CEO of the brain." These functions—focus, memory, organization, and regulation—are the bedrock of academic performance and social-emotional success. We have developed a 6-month revolutionary cycle that bridges complex neuro-developmental research with practical, daily engagement that children actually look forward to.',
   aboutSubtext: 'Our method identifies 5 core executive functions and brings them to life through relatable characters like Driver Dan, Lenny the Ladder, and Molly the Mirror. By integrating audio stories, rhythmic songs, and physical activity guides, we transform abstract cognitive concepts into concrete behaviors. This multi-sensory approach ensures that even the most complex skills are internalized through repetition, emotional connection, and play. Whether in a classroom or at home, TEAMIND empowers educators and parents to build the cognitive infrastructure children need to master their own attention, behavior, and emotions.',
-  aboutFootnote: '*(Optimal cognitive development is achieved through consistent repetition every other half-year cycle over a 3-year period).*',
+  aboutFootnote: '',
   successStoriesTitle: 'Success Stories.',
   successStoriesSubtitle: 'Real impact, real results.',
   foundersTitle: 'Meet the Founders.',

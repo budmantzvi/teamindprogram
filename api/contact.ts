@@ -2,18 +2,37 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-function getRecipients(adminEmail: any) {
-  if (!adminEmail) return [process.env.CONTACT_EMAIL || 'teamind50@gmail.com'];
+function getRecipients(adminInput: any) {
+  const emailSources: string[] = [];
   
-  if (Array.isArray(adminEmail)) {
-    return adminEmail.filter(e => typeof e === 'string' && e.includes('@'));
+  if (adminInput) {
+    const rawItems = Array.isArray(adminInput) ? adminInput : [adminInput];
+    rawItems.forEach(item => {
+      if (typeof item === 'string') {
+        // Handle "email1, email2" or "email1"
+        emailSources.push(...item.split(',').map(e => e.trim()));
+      } else if (item && typeof item === 'object' && item.email) {
+        emailSources.push(String(item.email).trim());
+      } else if (item) {
+        emailSources.push(String(item).trim());
+      }
+    });
   }
-  
-  if (typeof adminEmail === 'string') {
-    return adminEmail.split(',').map(e => e.trim()).filter(e => e.includes('@'));
+
+  if (process.env.CONTACT_EMAIL) {
+    emailSources.push(...process.env.CONTACT_EMAIL.split(',').map(e => e.trim()));
   }
-  
-  return [process.env.CONTACT_EMAIL || 'teamind50@gmail.com'];
+
+  // Final safety net
+  emailSources.push('teamind50@gmail.com');
+
+  const validEmails = Array.from(new Set(
+    emailSources
+      .filter(e => e && typeof e === 'string' && e.includes('@'))
+      .map(e => e.toLowerCase().trim())
+  ));
+
+  return validEmails.length > 0 ? validEmails : ['teamind50@gmail.com'];
 }
 
 export default async function handler(req: any, res: any) {
@@ -21,18 +40,24 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Handle potential stringified body from proxying
+  // Handle various body formats
   let body = req.body;
   if (typeof body === 'string') {
-    try { body = JSON.parse(body); } catch (e) {}
+    try { body = JSON.parse(body); } catch (e) {
+      console.error("[Vercel Contact] Parse error:", e);
+    }
   }
 
-  const { name, email, phone, message, adminEmail, notificationSetting = 'both' } = body;
+  // Aliases for frontend/backend sync
+  const { name, email, phone, message, language = 'he' } = body;
+  const adminInput = body.adminEmails || body.adminEmail || null;
+  const notificationSetting = body.notificationSetting || body.emailNotifications || 'both';
 
-  const recipients = getRecipients(adminEmail);
+  const recipients = getRecipients(adminInput);
+  console.log(`[Vercel Contact] From: ${email}, Recipients: ${recipients.join(', ')}`);
 
   if (notificationSetting === 'none') {
-    return res.status(200).json({ success: true, message: "Notifications disabled by admin" });
+    return res.status(200).json({ success: true, message: "Notifications disabled" });
   }
 
   try {
@@ -41,11 +66,10 @@ export default async function handler(req: any, res: any) {
 
     // 1. Email to Team
     if (notificationSetting === 'both' || notificationSetting === 'admin') {
-      console.log(`[Vercel Contact] Sending to recipients: ${recipients.join(', ')}`);
-      
       const { data, error } = await resend.emails.send({
         from: 'TEAMIND Contact <support@teamindprogram.com>',
         to: recipients,
+        replyTo: email, // Allow admin to reply directly to user
         subject: `New Message from ${name}`,
         html: `
           <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
