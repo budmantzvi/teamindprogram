@@ -5,6 +5,8 @@ import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
+import { useSite } from '../lib/SiteContext';
+
 interface MakePaymentButtonProps {
 // ... existing interface ...
   amount: number;
@@ -39,6 +41,7 @@ export const MakePaymentButton: React.FC<MakePaymentButtonProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const { t, i18n } = useTranslation();
+  const { siteConfig } = useSite();
 
   const handlePayment = async () => {
     if (disabled) return;
@@ -125,8 +128,27 @@ export const MakePaymentButton: React.FC<MakePaymentButtonProps> = ({
       }
 
       // 3. Call Make.com with the Order ID
-      const currentOrigin = window.location.origin;
-      const successUrl = `${currentOrigin}/success?orderId=${orderId}`;
+      const isProduction = !window.location.hostname.includes('localhost') && !window.location.hostname.includes('ais-dev');
+      const baseUrl = isProduction ? 'https://teamindprogram.com' : window.location.origin;
+      const successUrl = `${baseUrl}/success?orderId=${orderId}`;
+      const cancelUrl = `${baseUrl}/checkout`;
+
+      // Get admin emails from siteConfig
+      const emailNotifications = siteConfig?.emailNotifications || 'both';
+      const selectedAdmins = siteConfig?.notificationAdmins || [];
+      const allAdmins = siteConfig?.allAdmins || [];
+      const primaryEmail = siteConfig?.contactEmail;
+      
+      let targetAdminEmails: string[] = [];
+      if (selectedAdmins.length > 0) {
+        targetAdminEmails = selectedAdmins.filter((email: string) => email && email.includes('@'));
+      } else if (allAdmins.length > 0) {
+        targetAdminEmails = allAdmins.filter((email: string) => email && email.includes('@'));
+      } 
+      if (primaryEmail && primaryEmail.includes('@')) {
+        const splitEmails = primaryEmail.split(',').map((s: string) => s.trim()).filter((e: string) => e.includes('@'));
+        targetAdminEmails = Array.from(new Set([...targetAdminEmails, ...splitEmails]));
+      }
 
       const payload = {
         orderId,
@@ -144,7 +166,10 @@ export const MakePaymentButton: React.FC<MakePaymentButtonProps> = ({
         apartment: shippingAddress?.apartment || '',
         zipCode: shippingAddress?.zipCode || '',
         success_url: successUrl,
-        cancel_url: `${currentOrigin}/checkout`,
+        cancel_url: cancelUrl,
+        adminEmails: targetAdminEmails,
+        emailNotifications: emailNotifications,
+        language: i18n.language
       };
 
       const response = await fetch('/api/make-payment', {

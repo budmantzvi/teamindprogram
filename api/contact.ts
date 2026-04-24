@@ -2,6 +2,8 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 function getRecipients(adminInput: any) {
   let emailSources: string[] = [];
   
@@ -20,24 +22,27 @@ function getRecipients(adminInput: any) {
   }
 
   // Filter valid emails from input
-  let recipients = emailSources
+  let recipientsFromInput = emailSources
     .filter(e => e && typeof e === 'string' && e.includes('@'))
     .map(e => e.toLowerCase().trim());
 
+  // Use input if available
+  if (recipientsFromInput.length > 0) {
+    return Array.from(new Set(recipientsFromInput));
+  }
+
   // 2. If no admin input, use environment fallback
-  if (recipients.length === 0 && process.env.CONTACT_EMAIL) {
-    recipients = process.env.CONTACT_EMAIL.split(',')
+  if (process.env.CONTACT_EMAIL) {
+    const envEmails = process.env.CONTACT_EMAIL.split(',')
       .map(e => e.trim().toLowerCase())
       .filter(e => e && e.includes('@'));
+    if (envEmails.length > 0) {
+      return Array.from(new Set(envEmails));
+    }
   }
 
-  // 3. Final safety net (Emergency Fallback)
-  if (recipients.length === 0) {
-    recipients = ['teamind50@gmail.com'];
-  }
-
-  // Remove duplicates
-  return Array.from(new Set(recipients));
+  // 3. Final safety net (Emergency Fallback - ONLY if everything else is empty)
+  return ['teamind50@gmail.com'];
 }
 
 export default async function handler(req: any, res: any) {
@@ -59,16 +64,19 @@ export default async function handler(req: any, res: any) {
   const notificationSetting = body.notificationSetting || body.emailNotifications || 'both';
 
   const recipients = getRecipients(adminInput);
+  const normalizedSenderEmail = email.toLowerCase().trim();
   console.log(`[Vercel Contact] From: ${email}, Recipients: ${recipients.join(', ')}`);
 
   if (notificationSetting === 'none') {
     return res.status(200).json({ success: true, message: "Notifications disabled" });
   }
 
-  try {
-    let adminResult = null;
-    let clientResult = null;
+  const results = {
+    admin: { success: false, data: null, error: null },
+    client: { success: false, data: null, error: null }
+  };
 
+  try {
     // 1. Email to Team
     if (notificationSetting === 'both' || notificationSetting === 'admin') {
       const { data, error } = await resend.emails.send({
@@ -89,35 +97,68 @@ export default async function handler(req: any, res: any) {
           </div>
         `,
       });
-      if (error) console.error("[Vercel Contact] Resend error (admin):", error);
-      adminResult = data;
+      
+      if (error) {
+        console.error("[Vercel Contact] Resend error (admin):", error);
+        results.admin.error = error;
+      } else {
+        results.admin.success = true;
+        results.admin.data = data;
+      }
+
+      await sleep(500);
     }
 
     // 2. Email to Client
-    if (notificationSetting === 'both' || notificationSetting === 'sender') {
-      const { data, error } = await resend.emails.send({
-        from: 'TEAMIND <support@teamindprogram.com>',
-        to: [email],
-        replyTo: process.env.CONTACT_EMAIL || 'teamind50@gmail.com',
-        subject: `Thanks for reaching out, ${name}!`,
-        html: `
-          <div style="font-family: sans-serif; direction: ltr; padding: 20px;">
-            <h2 style="color: #0d9488;">Hi ${name},</h2>
-            <p>Thank you for contacting <strong>TEAMIND</strong>. We've received your message regarding our pedagogical kit.</p>
-            <p>Our team is reviewing your inquiry and we will get back to you within 24-48 hours.</p>
-            <br />
-            <p>Best regards,</p>
-            <p><strong>The TEAMIND Team</strong></p>
-          </div>
-        `,
-      });
-      if (error) console.error("[Vercel Contact] Resend error (client):", error);
-      clientResult = data;
+    const shouldSendToClient = notificationSetting === 'both' || notificationSetting === 'sender';
+    const isSenderInAdminList = normalizedSenderEmail && recipients.includes(normalizedSenderEmail);
+
+    if (shouldSendToClient) {
+      if (isSenderInAdminList) {
+        console.log(`[Vercel Contact] Sender ${normalizedSenderEmail} is in admin list. Skipping duplicate confirmation.`);
+        results.client.success = true;
+        results.client.data = { message: "Skipped - Sender is in Admin list" };
+      } else {
+        const { data, error } = await resend.emails.send({
+          from: 'TEAMIND <support@teamindprogram.com>',
+          to: [email],
+          replyTo: process.env.CONTACT_EMAIL || 'teamind50@gmail.com',
+          subject: `Thanks for reaching out, ${name}!`,
+          html: `
+            <div style="font-family: sans-serif; direction: ltr; padding: 20px;">
+              <h2 style="color: #0d9488;">Hi ${name},</h2>
+              <p>Thank you for contacting <strong>TEAMIND</strong>. We've received your message regarding our pedagogical kit.</p>
+              <p>Our team is reviewing your inquiry and we will get back to you within 24-48 hours.</p>
+              <br />
+              <p>Best regards,</p>
+              <p><strong>The TEAMIND Team</strong></p>
+            </div>
+          `,
+        });
+        
+        if (error) {
+          console.error("[Vercel Contact] Resend error (client):", error);
+          results.client.error = error;
+        } else {
+          results.client.success = true;
+          results.client.data = data;
+        }
+      }
     }
 
-    return res.status(200).json({ success: true, adminResult, clientResult });
+    return res.status(200).json({ 
+      success: true, 
+      admin: results.admin, 
+      client: results.client,
+      note: (results.admin.error || results.client.error) ? "Request accepted with partial email success." : undefined
+    });
+
   } catch (err: any) {
     console.error("[Vercel Contact] Server error:", err);
-    return res.status(500).json({ success: false, error: err.message });
+    return res.status(200).json({ 
+      success: false, 
+      error: err.message,
+      note: "Fatal error handled to prevent retry loop."
+    });
   }
 }

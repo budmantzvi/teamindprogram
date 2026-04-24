@@ -32,6 +32,9 @@ export default async function handler(req: any, res: any) {
     zipCode: shipping_address?.zipCode || req.body.zipCode || '',
     success_url: req.body.success_url || '',
     cancel_url: req.body.cancel_url || '',
+    adminEmails: req.body.adminEmails || [],
+    emailNotifications: req.body.emailNotifications || 'both',
+    language: req.body.language || 'he',
     
     timestamp: new Date().toISOString()
   };

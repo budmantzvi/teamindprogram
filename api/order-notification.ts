@@ -2,6 +2,8 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 function getRecipients(adminInput: any) {
   let emailSources: string[] = [];
   
@@ -20,24 +22,27 @@ function getRecipients(adminInput: any) {
   }
 
   // Filter valid emails from input
-  let recipients = emailSources
+  let recipientsFromInput = emailSources
     .filter(e => e && typeof e === 'string' && e.includes('@'))
     .map(e => e.toLowerCase().trim());
 
+  // Use input if available
+  if (recipientsFromInput.length > 0) {
+    return Array.from(new Set(recipientsFromInput));
+  }
+
   // 2. If no admin input, use environment fallback
-  if (recipients.length === 0 && process.env.CONTACT_EMAIL) {
-    recipients = process.env.CONTACT_EMAIL.split(',')
+  if (process.env.CONTACT_EMAIL) {
+    const envEmails = process.env.CONTACT_EMAIL.split(',')
       .map(e => e.trim().toLowerCase())
       .filter(e => e && e.includes('@'));
+    if (envEmails.length > 0) {
+      return Array.from(new Set(envEmails));
+    }
   }
 
-  // 3. Final safety net (Emergency Fallback)
-  if (recipients.length === 0) {
-    recipients = ['teamind50@gmail.com'];
-  }
-
-  // Remove duplicates
-  return Array.from(new Set(recipients));
+  // 3. Final safety net (Emergency Fallback - ONLY if everything else is empty)
+  return ['teamind50@gmail.com'];
 }
 
 function formatDateForEmail() {
@@ -79,12 +84,16 @@ export default async function handler(req: any, res: any) {
   }
 
   const recipients = getRecipients(adminInput);
+  const normalizedCustomerEmail = customerEmail.toLowerCase().trim();
   console.log(`[Vercel OrderNotify] Resolved recipients: ${recipients.join(', ')}`);
 
-  try {
-    let adminResult = null;
-    let clientResult = null;
+  // Final Results tracking
+  const results = {
+    admin: { success: false, data: null, error: null },
+    client: { success: false, data: null, error: null }
+  };
 
+  try {
     // 1. Email to Admin
     if (orderNotifications === 'both' || orderNotifications === 'admin') {
       console.log(`[Vercel OrderNotify] Attempting admin email to: ${recipients.join(', ')}`);
@@ -135,71 +144,103 @@ export default async function handler(req: any, res: any) {
           </div>
         `,
       });
+      
       if (error) {
         console.error("[Vercel OrderNotify] Resend error (admin):", error);
+        results.admin.error = error;
       } else {
         console.log("[Vercel OrderNotify] Admin email success:", data);
-        adminResult = data;
+        results.admin.success = true;
+        results.admin.data = data;
       }
+
+      // Add delay to prevent rate limit (max 5 per second)
+      await sleep(500);
     }
 
     // 2. Email to Client
-    if (orderNotifications === 'both' || orderNotifications === 'sender' || orderNotifications === 'customer') {
-      const isHe = language === 'he';
-      const senderEmail = process.env.RESEND_SENDER_EMAIL || 'support@teamindprogram.com';
-      console.log(`[Vercel OrderNotify] Attempting client email (${isHe ? 'HE' : 'EN'}) to: ${customerEmail}`);
-      
-      const subject = isHe ? `TEAMIND - אישור הזמנה #${orderId}` : `Order Confirmation #${orderId} - TEAMIND`;
-      const html = isHe ? `
-          <div style="font-family: sans-serif; padding: 30px; border: 1px solid #eee; border-radius: 20px; max-width: 600px; margin: 0 auto; direction: rtl; text-align: right;">
-            <h2 style="color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 10px; margin-bottom: 20px;">אישור הזמנה</h2>
-            <p>שלום ${customerName},</p>
-            <p>תודה על הרכישה! קיבלנו את הזמנתך עבור <strong>${program}</strong>.</p>
-            
-            <div style="margin: 20px 0; background: #f9fafb; padding: 20px; border-radius: 15px;">
-              <p><strong>מספר הזמנה:</strong> <span dir="ltr">#${orderId}</span></p>
-              <p><strong>סכום ששולם:</strong> ₪${amount}</p>
-            </div>
+    const shouldSendToClient = orderNotifications === 'both' || orderNotifications === 'sender' || orderNotifications === 'customer';
+    const isCustomerInAdminList = normalizedCustomerEmail && recipients.includes(normalizedCustomerEmail);
 
-            <p>אנו מכינים את הערכה שלך למשלוח. תקבל/י הודעת דוא"ל נוספת ברגע שהיא תצא לדרך.</p>
-            <p>אם יש לך שאלות, ניתן להשיב למייל זה.</p>
-            <p>בברכה,<br/><strong>צוות TEAMIND</strong></p>
-          </div>
-      ` : `
-          <div style="font-family: sans-serif; padding: 30px; border: 1px solid #eee; border-radius: 20px; max-width: 600px; margin: 0 auto; direction: ltr;">
-            <h2 style="color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 10px; margin-bottom: 20px;">Order Confirmation</h2>
-            <p>Hi ${customerName},</p>
-            <p>Thank you for your purchase! We've received your order for the <strong>${program}</strong>.</p>
-            
-            <div style="margin: 20px 0; background: #f9fafb; padding: 20px; border-radius: 15px;">
-              <p><strong>Order ID:</strong> <span dir="ltr">#${orderId}</span></p>
-              <p><strong>Amount Paid:</strong> ₪${amount}</p>
-            </div>
-
-            <p>We are preparing your kit for shipment. You will receive another email once it's on its way.</p>
-            <p>If you have any questions, feel free to reply to this email.</p>
-            <p>Best regards,<br/><strong>The TEAMIND Team</strong></p>
-          </div>
-      `;
-
-      const { data, error } = await resend.emails.send({
-        from: `TEAMIND <${senderEmail}>`,
-        to: [customerEmail],
-        replyTo: process.env.CONTACT_EMAIL || 'teamind50@gmail.com',
-        subject: subject,
-        html: html,
-      });
-      if (error) {
-        console.error("[Vercel OrderNotify] Resend error (client):", error);
+    if (shouldSendToClient) {
+      if (isCustomerInAdminList) {
+        console.log(`[Vercel OrderNotify] Customer ${normalizedCustomerEmail} is in admin list. Skipping duplicate confirmation email.`);
+        results.client.success = true;
+        results.client.data = { message: "Skipped - Customer is in Admin list" };
       } else {
-        console.log("[Vercel OrderNotify] Client email success:", data);
-        clientResult = data;
+        const isHe = language === 'he';
+        const senderEmail = process.env.RESEND_SENDER_EMAIL || 'support@teamindprogram.com';
+        console.log(`[Vercel OrderNotify] Attempting client email (${isHe ? 'HE' : 'EN'}) to: ${customerEmail}`);
+        
+        const subject = isHe ? `TEAMIND - אישור הזמנה #${orderId}` : `Order Confirmation #${orderId} - TEAMIND`;
+        const html = isHe ? `
+            <div style="font-family: sans-serif; padding: 30px; border: 1px solid #eee; border-radius: 20px; max-width: 600px; margin: 0 auto; direction: rtl; text-align: right;">
+              <h2 style="color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 10px; margin-bottom: 20px;">אישור הזמנה</h2>
+              <p>שלום ${customerName},</p>
+              <p>תודה על הרכישה! קיבלנו את הזמנתך עבור <strong>${program}</strong>.</p>
+              
+              <div style="margin: 20px 0; background: #f9fafb; padding: 20px; border-radius: 15px;">
+                <p><strong>מספר הזמנה:</strong> <span dir="ltr">#${orderId}</span></p>
+                <p><strong>סכום ששולם:</strong> ₪${amount}</p>
+              </div>
+
+              <p>אנו מכינים את הערכה שלך למשלוח. תקבל/י הודעת דוא"ל נוספת ברגע שהיא תצא לדרך.</p>
+              <p>אם יש לך שאלות, ניתן להשיב למייל זה.</p>
+              <p>בברכה,<br/><strong>צוות TEAMIND</strong></p>
+            </div>
+        ` : `
+            <div style="font-family: sans-serif; padding: 30px; border: 1px solid #eee; border-radius: 20px; max-width: 600px; margin: 0 auto; direction: ltr;">
+              <h2 style="color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 10px; margin-bottom: 20px;">Order Confirmation</h2>
+              <p>Hi ${customerName},</p>
+              <p>Thank you for your purchase! We've received your order for the <strong>${program}</strong>.</p>
+              
+              <div style="margin: 20px 0; background: #f9fafb; padding: 20px; border-radius: 15px;">
+                <p><strong>Order ID:</strong> <span dir="ltr">#${orderId}</span></p>
+                <p><strong>Amount Paid:</strong> ₪${amount}</p>
+              </div>
+
+              <p>We are preparing your kit for shipment. You will receive another email once it's on its way.</p>
+              <p>If you have any questions, feel free to reply to this email.</p>
+              <p>Best regards,<br/><strong>The TEAMIND Team</strong></p>
+            </div>
+        `;
+
+        const { data, error } = await resend.emails.send({
+          from: `TEAMIND <${senderEmail}>`,
+          to: [customerEmail],
+          replyTo: process.env.CONTACT_EMAIL || 'teamind50@gmail.com',
+          subject: subject,
+          html: html,
+        });
+        
+        if (error) {
+          console.error("[Vercel OrderNotify] Resend error (client):", error);
+          results.client.error = error;
+          // Even if client email fails, we don't want to fail the whole request and trigger retries
+        } else {
+          console.log("[Vercel OrderNotify] Client email success:", data);
+          results.client.success = true;
+          results.client.data = data;
+        }
       }
     }
 
-    return res.status(200).json({ success: true, adminResult, clientResult });
+    // Always Return 200 if we reached this point, even if some emails failed.
+    // This prevents external callers from retrying and causing duplicates.
+    return res.status(200).json({ 
+      success: true, 
+      admin: results.admin, 
+      client: results.client,
+      note: (results.admin.error || results.client.error) ? "One or more emails failed to send, but request completed." : undefined
+    });
+
   } catch (err: any) {
-    console.error("[Vercel OrderNotify] Fatal error:", err);
-    return res.status(500).json({ success: false, error: err.message });
+    console.error("[Vercel OrderNotify] Fatal error inside handler:", err);
+    // Even here, we might want to return 200 to block retries, but 500 is technically correct for crashes.
+    return res.status(200).json({ 
+      success: false, 
+      error: err.message, 
+      note: "Fatal error handled. Prevented retry." 
+    });
   }
 }
