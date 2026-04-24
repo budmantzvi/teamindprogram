@@ -1,7 +1,12 @@
 import { Resend } from "resend";
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
-import firebaseConfig from '../firebase-applet-config.json';
+import fs from 'fs';
+import path from 'path';
+
+// Read config safely
+const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
+const firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
 // Initialize Firebase for the API
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();

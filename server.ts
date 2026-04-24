@@ -23,16 +23,23 @@ if (!process.env.RESEND_API_KEY) {
   console.warn("WARNING: RESEND_API_KEY is not set. Email notifications will fail.");
 }
 
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getFirestore, doc, runTransaction, serverTimestamp, setDoc } from 'firebase/firestore';
+import fs from 'fs';
+
+// Read config safely
+const firebaseConfig = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'firebase-applet-config.json'), 'utf8'));
+
+// Initialize Firebase for the Server
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+
 /**
  * Helper to get validated recipients from various sources
  */
 const getRecipients = (adminEmails: any, adminEmail: any, fallback: string = 'teamind50@gmail.com'): string[] => {
   let raw: any[] = [];
-  const normalizedFallback = fallback.toLowerCase().trim();
-
-  // DEBUG: Track exactly what's arriving from the client
-  console.log(`[getRecipients] DEBUG START: adminEmails=${JSON.stringify(adminEmails)}, adminEmail=${JSON.stringify(adminEmail)}`);
-
+  
   const processInput = (input: any) => {
     if (!input) return;
     if (Array.isArray(input)) {
@@ -58,25 +65,19 @@ const getRecipients = (adminEmails: any, adminEmail: any, fallback: string = 'te
   ));
 
   if (cleanEmails.length > 0) {
-    console.log(`[getRecipients] SUCCESS: Valid UI recipients found: [${cleanEmails.join(', ')}]`);
     return cleanEmails;
   }
-
-  console.log("[getRecipients] INFO: No UI recipients found. Checking server ENV variables...");
 
   // Fallback 1: Environment Variable
   const envEmail = (process.env.CONTACT_EMAIL || '').trim();
   if (envEmail) {
     const envEmails = envEmail.split(',').map(s => s.trim().toLowerCase()).filter(e => e.includes('@'));
     if (envEmails.length > 0) {
-      console.log(`[getRecipients] FALLBACK: No UI settings found. Using CONTACT_EMAIL env: [${envEmails.join(', ')}]`);
       return envEmails;
     }
   }
 
-  // Fallback 2: Hardcoded safety
-  console.log(`[getRecipients] CRITICAL WARNING: No UI settings and no ENV variable found. Using hardcoded fallback: ${normalizedFallback}`);
-  return [normalizedFallback];
+  return [fallback.toLowerCase().trim()];
 };
 
 /**
@@ -139,6 +140,7 @@ async function startServer() {
       language
     } = bodyData || {};
 
+    const contactId = `${email}_${Date.now()}`; // Simple unique ID for this specific submission
     const nSetting = emailNotifications || notificationSetting || 'both';
     
     // Detailed logs for debugging
@@ -381,183 +383,177 @@ async function startServer() {
     }
   });
 
+  // Memory cache for fast local idempotency
+  const processedOrders = new Map<string, number>();
+  const CACHE_TTL = 30000;
+
   // API Route: Order Notification
   app.post("/api/order-notification", async (req, res) => {
-    // 1. Ensure body is an object (Vercel/Node edge cases)
     let bodyData = req.body;
     if (typeof bodyData === 'string') {
-      try { bodyData = JSON.parse(bodyData); } catch (e) { console.error("Order Body parse error:", e); }
+      try { bodyData = JSON.parse(bodyData); } catch (e) {}
+    }
+
+    const orderId = String(bodyData.orderId || bodyData.order_id || bodyData.transactionId || bodyData.transaction_id || '0000');
+    const source = bodyData.source || 'server-unknown';
+
+    // 1. FAST IN-MEMORY CHECK
+    const now = Date.now();
+    if (processedOrders.has(orderId) && (now - (processedOrders.get(orderId) || 0) < CACHE_TTL)) {
+      console.log(`[OrderNotify] Order ${orderId} recently seen in memory. Skipping.`);
+      return res.status(200).json({ success: true, message: "Duplicate (Memory)" });
+    }
+
+    // 2. ATOMIC DATABASE GATEKEEPER
+    try {
+      const lockRef = doc(db, 'notification_locks', orderId);
+      const lockResult = await runTransaction(db, async (transaction) => {
+        const lockDoc = await transaction.get(lockRef);
+        if (lockDoc.exists()) {
+          const data = lockDoc.data();
+          if (data.sent) return { alreadySent: true };
+          // If being processed and very recent (30s), treat as duplicate
+          const lastTs = data.timestamp?.toMillis() || 0;
+          if (Date.now() - lastTs < 30000) return { alreadySent: true };
+        }
+        transaction.set(lockRef, {
+          orderId, source, sent: false, processing: true, timestamp: serverTimestamp()
+        }, { merge: true });
+        return { alreadySent: false };
+      });
+
+      if (lockResult.alreadySent) {
+        console.log(`[OrderNotify] Order ${orderId} already sent or processing (Global Lock). Skipping.`);
+        processedOrders.set(orderId, now);
+        return res.status(200).json({ success: true, message: "Duplicate (Global Lock)" });
+      }
+      processedOrders.set(orderId, now);
+    } catch (lockErr) {
+      console.error("[OrderNotify] Lock failed:", lockErr);
+      // Wait a bit to avoid race if Firestore is slow
+      await new Promise(r => setTimeout(r, Math.floor(Math.random() * 800)));
     }
 
     const { 
-      orderId, 
-      customerName, 
-      customerEmail, 
-      phone, 
-      program, 
-      amount, 
-      shippingAddress, 
+      customerName = 'Customer', 
+      customerEmail = '', 
+      phone = '', 
+      program = 'Pedagogical Kit', 
+      amount = '0', 
+      shippingAddress = null, 
       adminEmails, 
       adminEmail, 
-      orderNotifications,
-      language
+      orderNotifications = 'both',
+      language = 'he'
     } = bodyData || {};
 
-    const nSetting = orderNotifications || 'both';
-    
-    // Detailed logs for debugging
-    console.log("=========================================");
-    console.log("[ORDER API] RECEIVED DATA:", JSON.stringify(bodyData));
-    console.log("[ORDER API] RESEND_API_KEY STATUS:", process.env.RESEND_API_KEY ? "CONFIGURED (Starts with " + process.env.RESEND_API_KEY.substring(0, 5) + "...)" : "MISSING");
-    
     const recipients = getRecipients(adminEmails, adminEmail);
-    console.log(`[ORDER API] DECIDED RECIPIENTS: ${JSON.stringify(recipients)}`);
-    console.log("=========================================");
+    const normalizedCustomerEmail = customerEmail.toLowerCase().trim();
+    
+    // Explicitly separate recipients to avoid crosstalk
+    const adminRecipients = recipients.filter(e => e.toLowerCase() !== normalizedCustomerEmail);
 
-    if (nSetting === 'none') {
-      return res.json({ success: true, message: "Order notifications disabled" });
+    console.log(`[OrderNotify] Processing #${orderId} | Admin Recips: ${adminRecipients.length} | Customer: ${normalizedCustomerEmail}`);
+
+    if (orderNotifications === 'none') {
+      return res.json({ success: true, message: "Notifications disabled" });
+    }
+
+    const emailTasks: Promise<any>[] = [];
+    const senderEmail = process.env.RESEND_SENDER_EMAIL || 'support@teamindprogram.com';
+    const orderDate = formatDateForEmail();
+    const isHe = language === 'he';
+
+    // --- DECOUPLED LOGIC: ADMINS ---
+    if ((orderNotifications === 'both' || orderNotifications === 'admin') && adminRecipients.length > 0) {
+      const primaryAdmin = adminRecipients[0];
+      const otherAdmins = adminRecipients.slice(1);
+      
+      emailTasks.push(resend.emails.send({
+        from: `TEAMIND <${senderEmail}>`,
+        to: [primaryAdmin],
+        bcc: otherAdmins.length > 0 ? otherAdmins : undefined,
+        replyTo: normalizedCustomerEmail || undefined,
+        subject: `New Order #${orderId} - ${customerName}`,
+        html: `
+          <div style="font-family: sans-serif; padding: 30px; border: 1px solid #eee; border-radius: 20px; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 10px; margin-bottom: 20px;">New Order Received!</h2>
+            <div style="margin: 20px 0;">
+              <p style="font-size: 18px;"><strong>Date:</strong> ${orderDate}</p>
+              <p style="font-size: 18px;"><strong>Order ID:</strong> <span dir="ltr">#${orderId}</span></p>
+              <p><strong>Program:</strong> ${program}</p>
+              <p><strong>Amount:</strong> ₪${amount}</p>
+            </div>
+            <div style="background: #f9fafb; padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+              <h3 style="margin-top: 0; color: #334155;">Customer Details</h3>
+              <p><strong>Name:</strong> ${customerName}</p>
+              <p><strong>Email:</strong> ${customerEmail}</p>
+              <p><strong>Phone:</strong> ${phone}</p>
+            </div>
+            ${shippingAddress ? `
+            <div style="background: #f0fdfa; padding: 20px; border-radius: 15px; border: 1px solid #ccfbf1;">
+              <h3 style="margin-top: 0; color: #0f766e;">Shipping Address</h3>
+              <p style="margin-bottom: 0;">
+                ${shippingAddress.street || ''} ${shippingAddress.houseNumber || ''}<br/>
+                ${shippingAddress.apartment ? `דירה ${shippingAddress.apartment}<br/>` : ''}
+                ${shippingAddress.city || ''}<br/>
+                ${shippingAddress.zipCode ? `מיקוד: ${shippingAddress.zipCode}` : ''}
+              </p>
+            </div>
+            ` : ''}
+          </div>
+        `,
+      }));
+    }
+
+    // --- DECOUPLED LOGIC: CUSTOMER ---
+    const shouldSendToCustomer = ['both', 'customer', 'sender'].includes(orderNotifications);
+    if (shouldSendToCustomer && normalizedCustomerEmail.includes('@')) {
+      const subject = isHe ? `TEAMIND - אישור הזמנה #${orderId}` : `Order Confirmation #${orderId} - TEAMIND`;
+      const html = isHe ? `
+        <div style="font-family: sans-serif; padding: 30px; border: 1px solid #eee; border-radius: 20px; max-width: 600px; margin: 0 auto; direction: rtl; text-align: right;">
+          <h2 style="color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 10px; margin-bottom: 20px;">אישור הזמנה</h2>
+          <p>שלום ${customerName},</p>
+          <p>תודה על הרכישה! קיבלנו את הזמנתך עבור <strong>${program}</strong>.</p>
+          <div style="margin: 20px 0; background: #f9fafb; padding: 20px; border-radius: 15px;">
+            <p><strong>מספר הזמנה:</strong> <span dir="ltr">#${orderId}</span></p>
+            <p><strong>סכום ששולם:</strong> ₪${amount}</p>
+          </div>
+          <p>אנו מכינים את הערכה שלך למשלוח. תקבל/י הודעת דוא"ל נוספת ברגע שהיא תצא לדרך.</p>
+          <p>בברכה,<br/><strong>צוות TEAMIND</strong></p>
+        </div>
+      ` : `
+        <div style="font-family: sans-serif; padding: 30px; border: 1px solid #eee; border-radius: 20px; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 10px; margin-bottom: 20px;">Order Confirmation</h2>
+          <p>Hi ${customerName},</p>
+          <p>Thank you for your purchase! We've received your order for the <strong>${program}</strong>.</p>
+          <div style="margin: 20px 0; background: #f9fafb; padding: 20px; border-radius: 15px;">
+            <p><strong>Order ID:</strong> <span dir="ltr">#${orderId}</span></p>
+            <p><strong>Amount Paid:</strong> ₪${amount}</p>
+          </div>
+          <p>Best regards,<br/><strong>The TEAMIND Team</strong></p>
+        </div>
+      `;
+
+      emailTasks.push(resend.emails.send({
+        from: `TEAMIND <${senderEmail}>`,
+        to: [normalizedCustomerEmail],
+        replyTo: adminRecipients[0] || senderEmail,
+        subject: subject,
+        html: html,
+      }));
     }
 
     try {
-      let adminResult = null;
-      let clientResult = null;
-
-      // 1. Email to Admin
-      if (nSetting === 'both' || nSetting === 'admin') {
-        if (recipients.length > 0) {
-          console.log(`[OrderNotify] Sending Admin Notifications to: ${recipients.join(', ')}`);
-          
-          const senderEmail = process.env.RESEND_SENDER_EMAIL || 'support@teamindprogram.com';
-          const orderDate = formatDateForEmail();
-          
-          const emailPromises = recipients.map(recipient => 
-            resend.emails.send({
-              from: `TEAMIND <${senderEmail}>`,
-              to: [recipient],
-              subject: `New Order #${orderId} - ${customerName}`,
-              html: `
-                <div style="font-family: sans-serif; padding: 30px; border: 1px solid #eee; border-radius: 20px; max-width: 600px; margin: 0 auto;">
-                  <h2 style="color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 10px; margin-bottom: 20px;">New Order Received!</h2>
-                  
-                  <div style="margin: 20px 0;">
-                    <p style="font-size: 18px;"><strong>Date:</strong> ${orderDate}</p>
-                    <p style="font-size: 18px;"><strong>Order ID:</strong> <span dir="ltr">#${orderId}</span></p>
-                    <p><strong>Program:</strong> ${program}</p>
-                    <p><strong>Amount:</strong> ₪${amount}</p>
-                  </div>
-
-                  <div style="background: #f9fafb; padding: 20px; border-radius: 15px; margin-bottom: 20px;">
-                    <h3 style="margin-top: 0; color: #334155;">Customer Details</h3>
-                    <p><strong>Name:</strong> ${customerName}</p>
-                    <p><strong>Email:</strong> ${customerEmail}</p>
-                    <p><strong>Phone:</strong> ${phone}</p>
-                  </div>
-
-                  ${shippingAddress ? `
-                  <div style="background: #f0fdfa; padding: 20px; border-radius: 15px; border: 1px solid #ccfbf1;">
-                    <h3 style="margin-top: 0; color: #0f766e;">Shipping Address</h3>
-                    <p style="margin-bottom: 0;">
-                      ${shippingAddress.street || ''} ${shippingAddress.houseNumber || ''}<br/>
-                      ${shippingAddress.apartment ? `דירה ${shippingAddress.apartment}<br/>` : ''}
-                      ${shippingAddress.city || ''}<br/>
-                      ${shippingAddress.zipCode ? `מיקוד: ${shippingAddress.zipCode}` : ''}
-                    </p>
-                  </div>
-                  ` : ''}
-
-                  <div style="margin-top: 30px; text-align: center;">
-                    <a href="https://teamindprogram.com/teamind-secure-portal-2024-v2" 
-                       style="background: #0d9488; color: white; padding: 12px 25px; text-decoration: none; border-radius: 50px; font-weight: bold;">
-                       View in Admin Panel
-                    </a>
-                  </div>
-                </div>
-              `,
-            })
-          );
-
-          const results = await Promise.allSettled(emailPromises);
-          results.forEach((res, idx) => {
-            if (res.status === 'fulfilled' && !res.value.error) {
-              console.log(`[OrderNotify] Success for admin ${recipients[idx]}`);
-              adminResult = res.value.data;
-            } else {
-              const error = res.status === 'fulfilled' ? (res.value.error || 'Unknown Error') : res.reason;
-              console.error(`[OrderNotify] Failure for admin ${recipients[idx]}:`, error);
-            }
-          });
-        } else {
-          console.warn("[OrderNotify] No admin recipients found. Notification setting was:", nSetting);
-        }
-      }
-
-      // 2. Email to Client
-      if (nSetting === 'both' || nSetting === 'sender' || nSetting === 'customer') {
-        try {
-          console.log(`[OrderNotify] Sending Client Notification to: ${customerEmail}`);
-          const senderEmail = process.env.RESEND_SENDER_EMAIL || 'support@teamindprogram.com';
-          const isHe = language === 'he';
-          
-          const subject = isHe ? `TEAMIND - אישור הזמנה #${orderId}` : `Order Confirmation #${orderId} - TEAMIND`;
-          const html = isHe ? `
-              <div style="font-family: sans-serif; padding: 30px; border: 1px solid #eee; border-radius: 20px; max-width: 600px; margin: 0 auto; direction: rtl; text-align: right;">
-                <h2 style="color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 10px; margin-bottom: 20px;">אישור הזמנה</h2>
-                <p>שלום ${customerName},</p>
-                <p>תודה על הרכישה! קיבלנו את הזמנתך עבור <strong>${program}</strong>.</p>
-                
-                <div style="margin: 20px 0; background: #f9fafb; padding: 20px; border-radius: 15px;">
-                  <p><strong>מספר הזמנה:</strong> <span dir="ltr">#${orderId}</span></p>
-                  <p><strong>סכום ששולם:</strong> ₪${amount}</p>
-                </div>
-
-                <p>אנו מכינים את הערכה שלך למשלוח. תקבל/י הודעת דוא"ל נוספת ברגע שהיא תצא לדרך.</p>
-                
-                <p>אם יש לך שאלות, ניתן להשיב למייל זה.</p>
-                
-                <p>בברכה,<br/><strong>צוות TEAMIND</strong></p>
-              </div>
-          ` : `
-              <div style="font-family: sans-serif; padding: 30px; border: 1px solid #eee; border-radius: 20px; max-width: 600px; margin: 0 auto; direction: ltr;">
-                <h2 style="color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 10px; margin-bottom: 20px;">Order Confirmation</h2>
-                <p>Hi ${customerName},</p>
-                <p>Thank you for your purchase! We've received your order for the <strong>${program}</strong>.</p>
-                
-                <div style="margin: 20px 0; background: #f9fafb; padding: 20px; border-radius: 15px;">
-                  <p><strong>Order ID:</strong> <span dir="ltr">#${orderId}</span></p>
-                  <p><strong>Amount Paid:</strong> ₪${amount}</p>
-                </div>
-
-                <p>We are preparing your kit for shipment. You will receive another email once it's on its way.</p>
-                
-                <p>If you have any questions, feel free to reply to this email.</p>
-                
-                <p>Best regards,<br/><strong>The TEAMIND Team</strong></p>
-              </div>
-          `;
-
-          const { data, error } = await resend.emails.send({
-            from: `TEAMIND <${senderEmail}>`,
-            to: [customerEmail],
-            replyTo: process.env.CONTACT_EMAIL || 'teamind50@gmail.com',
-            subject: subject,
-            html: html,
-          });
-          
-          if (error) {
-            console.error("[OrderNotify] Resend error (client):", error);
-          } else {
-            console.log(`[OrderNotify] Success for client ${customerEmail}`);
-            clientResult = data;
-          }
-        } catch (clientResendErr) {
-          console.error("[OrderNotify] Resend Exception (client):", clientResendErr);
-        }
-      }
-
-      res.json({ success: true, adminResult, clientResult });
+      await Promise.allSettled(emailTasks);
+      // 3. FINALIZE DATABASE GATEKEEPER
+      const lockRef = doc(db, 'notification_locks', orderId);
+      await setDoc(lockRef, { sent: true, sentAt: serverTimestamp() }, { merge: true });
+      
+      res.json({ success: true, message: "Emails processed successfully" });
     } catch (err: any) {
-      console.error("[OrderNotify] Server error:", err);
-      res.status(500).json({ success: false, error: err.message });
+      console.error("[OrderNotify] Error in execution flow:", err);
+      res.status(200).json({ success: false, error: err.message, note: "Handled to stop retry loops" });
     }
   });
 
