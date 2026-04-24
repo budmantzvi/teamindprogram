@@ -148,15 +148,18 @@ export const ContactForm = () => {
     let targetAdminEmails: string[] = [];
     
     if (selectedAdmins.length > 0) {
+      // Use specifically selected admins from the list
       targetAdminEmails = selectedAdmins.filter((email: string) => email && email.includes('@'));
+    } else if (primaryEmail && primaryEmail.includes('@')) {
+      // Fallback to primary contact email if no specific admins selected
+      targetAdminEmails = primaryEmail.split(',').map((s: string) => s.trim()).filter((e: string) => e.includes('@'));
     } else if (allAdmins.length > 0) {
+      // Last resort: use all admins list
       targetAdminEmails = allAdmins.filter((email: string) => email && email.includes('@'));
-    } 
-    
-    if (primaryEmail && primaryEmail.includes('@')) {
-      const splitEmails = primaryEmail.split(',').map((s: string) => s.trim()).filter((e: string) => e.includes('@'));
-      targetAdminEmails = Array.from(new Set([...targetAdminEmails, ...splitEmails]));
     }
+    
+    // Ensure uniqueness
+    targetAdminEmails = Array.from(new Set(targetAdminEmails.map(e => e.toLowerCase().trim())));
 
     console.log("---------------- CONTACT FORM DEBUG ----------------");
     console.log("Current siteConfig:", siteConfig);
@@ -168,9 +171,7 @@ export const ContactForm = () => {
 
     // Check if targetAdminEmails is still empty
     if (targetAdminEmails.length === 0) {
-        console.warn("WARNING: No admin emails found in siteConfig. Using hardcoded fallback for tracking.");
-        // We add a fallback here just for the notification payload
-        targetAdminEmails = ['teamind50@gmail.com'];
+        console.warn("WARNING: No admin emails found in siteConfig. Notification might not be sent to admins.");
     }
 
     console.log("Submitting contact form...", { data, recipients: targetAdminEmails, setting: emailNotifications });

@@ -41,8 +41,8 @@ function getRecipients(adminInput: any) {
     }
   }
 
-  // 3. Final safety net (Emergency Fallback - ONLY if everything else is empty)
-  return ['teamind50@gmail.com'];
+  // 3. Final safety net (Removed emergency hardcoded fallback)
+  return [];
 }
 
 export default async function handler(req: any, res: any) {
@@ -77,40 +77,39 @@ export default async function handler(req: any, res: any) {
   };
 
   try {
-    // 1. Email to Team
-    if (notificationSetting === 'both' || notificationSetting === 'admin') {
-      console.log(`[Vercel Contact] Sending individual admin emails to: ${recipients.join(', ')}`);
+    // 1. Email to Team (BCC for efficiency)
+    if ((notificationSetting === 'both' || notificationSetting === 'admin') && recipients.length > 0) {
+      const primaryAdmin = recipients[0];
+      const otherAdmins = recipients.slice(1);
       
-      for (const recipient of recipients) {
-        const { data, error } = await resend.emails.send({
-          from: 'TEAMIND Contact <support@teamindprogram.com>',
-          to: [recipient],
-          replyTo: email, // Allow admin to reply directly to user
-          subject: `New Message from ${name}`,
-          html: `
-            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-              <h2 style="color: #0d9488;">New Contact Form Submission</h2>
-              <p><strong>Name:</strong> ${name}</p>
-              <p><strong>Email:</strong> ${email}</p>
-              <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
-              <p><strong>Message:</strong></p>
-              <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #0d9488;">
-                ${message.replace(/\n/g, '<br/>')}
-              </div>
+      console.log(`[Vercel Contact] Sending admin notification to ${primaryAdmin} (BCC: ${otherAdmins.length} others)`);
+      
+      const { data, error } = await resend.emails.send({
+        from: 'TEAMIND Contact <support@teamindprogram.com>',
+        to: [primaryAdmin],
+        bcc: otherAdmins.length > 0 ? otherAdmins : undefined,
+        replyTo: email, // Allow admin to reply directly to user
+        subject: `New Message from ${name}`,
+        html: `
+          <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+            <h2 style="color: #0d9488;">New Contact Form Submission</h2>
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
+            <p><strong>Message:</strong></p>
+            <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #0d9488;">
+              ${message.replace(/\n/g, '<br/>')}
             </div>
-          `,
-        });
+          </div>
+        `,
+      });
 
-        if (error) {
-          console.error(`[Vercel Contact] Resend error for admin ${recipient}:`, error);
-          results.admin.error = error;
-        } else {
-          results.admin.success = true;
-          results.admin.data = data;
-        }
-        
-        // Small stagger to avoid rate limits
-        await sleep(400); 
+      if (error) {
+        console.error(`[Vercel Contact] Resend error for admin:`, error);
+        results.admin.error = error;
+      } else {
+        results.admin.success = true;
+        results.admin.data = data;
       }
     }
 

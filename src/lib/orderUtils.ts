@@ -63,6 +63,10 @@ export const processOrderSuccess = async (orderId: string, siteConfig: any) => {
 
     // 3. Send notification
     console.log("Triggering order notification API with data:", orderData);
+    
+    // Set session guard EARLY to prevent duplicate triggers from the same window
+    sessionStorage.setItem(sessionKey, 'processing');
+    
     try {
       // Use selected admins if list is not empty, otherwise fallback to all known admins or the primary contact
       const selectedAdmins = siteConfig?.orderNotificationAdmins || [];
@@ -71,12 +75,18 @@ export const processOrderSuccess = async (orderId: string, siteConfig: any) => {
       let adminEmails: string[] = [];
       
       if (selectedAdmins.length > 0) {
+        // Use specifically selected admins for orders
         adminEmails = selectedAdmins.filter((email: string) => email && email.includes('@'));
-      } else if (allAdmins.length > 0) {
-        adminEmails = allAdmins.filter((email: string) => email && email.includes('@'));
       } else if (siteConfig?.contactEmail) {
+        // Fallback to primary contact
         adminEmails = siteConfig.contactEmail.split(',').map((s: string) => s.trim()).filter((e: string) => e.includes('@'));
+      } else if (allAdmins.length > 0) {
+        // Last resort
+        adminEmails = allAdmins.filter((email: string) => email && email.includes('@'));
       }
+      
+      // Ensure uniqueness
+      adminEmails = Array.from(new Set(adminEmails.map(e => e.toLowerCase().trim())));
 
       console.log("Final Admin Recipients for API:", adminEmails);
 
@@ -93,7 +103,8 @@ export const processOrderSuccess = async (orderId: string, siteConfig: any) => {
           shippingAddress: orderData.shippingAddress,
           adminEmails: adminEmails,
           orderNotifications: siteConfig?.orderNotifications || 'both',
-          language: localStorage.getItem('i18nextLng') || 'he'
+          language: localStorage.getItem('i18nextLng') || 'he',
+          source: 'client'
         })
       });
       
@@ -105,6 +116,14 @@ export const processOrderSuccess = async (orderId: string, siteConfig: any) => {
       } else {
         const errData = await response.json();
         console.error("Notification API failed:", errData);
+        // If it's not a duplicate, we might want to allow retry later? 
+        // But for duplicates, we don't remove the 'processing' flag.
+        if (errData.message === "Duplicate (Memory)" || errData.message === "Duplicate (Global Lock)") {
+          sessionStorage.setItem(sessionKey, 'true');
+        } else {
+          // On other errors, maybe allow retry?
+          sessionStorage.removeItem(sessionKey);
+        }
       }
     } catch (notifyErr) {
       console.error("Error calling notification API:", notifyErr);

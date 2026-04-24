@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Navbar, Footer } from '../components/Shared';
 import { motion } from 'motion/react';
 import { CheckCircle2, ShoppingBag, ArrowRight, Home } from 'lucide-react';
@@ -12,6 +12,7 @@ const SuccessPage = () => {
   const { siteConfig } = useSite();
   const { t, i18n } = useTranslation();
   const isHe = i18n.language === 'he';
+  const hasProcessed = useRef(false);
   
   // Try to get orderId from URL, then localStorage
   const orderIdFromUrl = searchParams.get('orderId') || searchParams.get('transaction_id');
@@ -19,7 +20,8 @@ const SuccessPage = () => {
   const orderId = orderIdFromUrl || orderIdFromStorage || 'UNKNOWN';
 
   useEffect(() => {
-    if (siteConfig && orderId !== 'UNKNOWN') {
+    if (siteConfig && orderId !== 'UNKNOWN' && !hasProcessed.current) {
+      hasProcessed.current = true;
       processOrderSuccess(orderId, siteConfig);
     }
   }, [orderId, siteConfig]);

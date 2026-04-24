@@ -55,14 +55,29 @@ export default async function handler(req: any, res: any) {
     }
 
     const text = await response.text();
+    
+    // Check if the response is "Accepted" (Standard Make.com response if no Webhook Response module is used)
+    if (text === "Accepted" || response.status === 202) {
+      console.log("Make.com accepted the request but didn't return a JSON body. This usually means the Webhook Response module is missing.");
+      // If we don't have a URL, we can't redirect, but we must return 200 to block retries
+      return res.status(200).json({ 
+        success: true, 
+        message: "Request accepted by Make.com. Redirect to success page might be manual if no URL was provided.",
+        url: req.body.success_url // Fallback to success URL if provided
+      });
+    }
+
     let data;
     try {
       data = JSON.parse(text);
     } catch (e) {
-      if (text === "Accepted") {
-        throw new Error("מייק (Make.com) החזיר 'Accepted' במקום כתובת תשלום. ודא שהוספת מודול 'Webhook Response' בסוף התרחיש במייק שמחזיר JSON עם ה-URL.");
-      }
-      throw new Error(`תגובה לא תקינה ממייק: ${text}`);
+      console.error(`Invalid response from Make: ${text}`);
+      // Return 200 even on parse error to stop retries
+      return res.status(200).json({ 
+        success: false, 
+        error: "Invalid response from background process",
+        url: req.body.success_url 
+      });
     }
     
     if (data && data.url) {
