@@ -1140,7 +1140,7 @@ export default function Admin() {
                 <div className="flex items-center gap-4">
                   <h3 className="text-2xl font-serif font-bold text-slate-900">Program Orders</h3>
                   <span className="px-4 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs font-black uppercase tracking-widest">
-                    {dataLoading.orders ? 'Loading...' : `${orders.length} Total`}
+                    {dataLoading.orders ? 'Loading...' : `${orders.filter(o => o.status === 'paid' || o.status === 'completed').length} Total`}
                   </span>
                 </div>
                 <div className="relative w-full md:w-96">
@@ -1173,11 +1173,12 @@ export default function Admin() {
                     const id = (o.orderId || '').toLowerCase().replace('#', '');
                     const name = (o.customerName || '').toLowerCase();
                     const email = (o.customerEmail || '').toLowerCase();
-                    return id.includes(search) || name.includes(search) || email.includes(search);
+                    const isPaid = o.status === 'paid' || o.status === 'completed';
+                    return (id.includes(search) || name.includes(search) || email.includes(search)) && isPaid;
                   }).length === 0 ? (
                     <div className="bg-white rounded-[40px] p-12 text-center border-2 border-dashed border-slate-100">
                       <ShoppingBag className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-                      <p className="text-slate-400 font-bold">No orders match your search.</p>
+                      <p className="text-slate-400 font-bold">No paid orders match your search.</p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -1187,7 +1188,8 @@ export default function Admin() {
                           const id = (o.orderId || '').toLowerCase().replace('#', '');
                           const name = (o.customerName || '').toLowerCase();
                           const email = (o.customerEmail || '').toLowerCase();
-                          return id.includes(search) || name.includes(search) || email.includes(search);
+                          const isPaid = o.status === 'paid' || o.status === 'completed';
+                          return (id.includes(search) || name.includes(search) || email.includes(search)) && isPaid;
                         })
                         .map((o) => (
                           <div key={o.id} className="bg-white rounded-[40px] shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col hover:shadow-md transition-shadow">

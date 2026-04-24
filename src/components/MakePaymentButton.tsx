@@ -125,6 +125,9 @@ export const MakePaymentButton: React.FC<MakePaymentButtonProps> = ({
       }
 
       // 3. Call Make.com with the Order ID
+      const currentOrigin = window.location.origin;
+      const successUrl = `${currentOrigin}/success?orderId=${orderId}`;
+
       const payload = {
         orderId,
         amount: Number(amount),
@@ -140,6 +143,8 @@ export const MakePaymentButton: React.FC<MakePaymentButtonProps> = ({
         houseNumber: shippingAddress?.houseNumber || '',
         apartment: shippingAddress?.apartment || '',
         zipCode: shippingAddress?.zipCode || '',
+        success_url: successUrl,
+        cancel_url: `${currentOrigin}/checkout`,
       };
 
       const response = await fetch('/api/make-payment', {

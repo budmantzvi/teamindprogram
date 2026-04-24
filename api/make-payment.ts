@@ -30,6 +30,8 @@ export default async function handler(req: any, res: any) {
     houseNumber: shipping_address?.houseNumber || req.body.houseNumber || '',
     apartment: shipping_address?.apartment || req.body.apartment || '',
     zipCode: shipping_address?.zipCode || req.body.zipCode || '',
+    success_url: req.body.success_url || '',
+    cancel_url: req.body.cancel_url || '',
     
     timestamp: new Date().toISOString()
   };

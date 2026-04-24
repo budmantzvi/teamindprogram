@@ -3,13 +3,13 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 function getRecipients(adminInput: any) {
-  const emailSources: string[] = [];
+  let emailSources: string[] = [];
   
+  // 1. Priority: Input from Admin/Frontend
   if (adminInput) {
     const rawItems = Array.isArray(adminInput) ? adminInput : [adminInput];
     rawItems.forEach(item => {
       if (typeof item === 'string') {
-        // Handle "email1, email2" or "email1"
         emailSources.push(...item.split(',').map(e => e.trim()));
       } else if (item && typeof item === 'object' && item.email) {
         emailSources.push(String(item.email).trim());
@@ -19,20 +19,25 @@ function getRecipients(adminInput: any) {
     });
   }
 
-  if (process.env.CONTACT_EMAIL) {
-    emailSources.push(...process.env.CONTACT_EMAIL.split(',').map(e => e.trim()));
+  // Filter valid emails from input
+  let recipients = emailSources
+    .filter(e => e && typeof e === 'string' && e.includes('@'))
+    .map(e => e.toLowerCase().trim());
+
+  // 2. If no admin input, use environment fallback
+  if (recipients.length === 0 && process.env.CONTACT_EMAIL) {
+    recipients = process.env.CONTACT_EMAIL.split(',')
+      .map(e => e.trim().toLowerCase())
+      .filter(e => e && e.includes('@'));
   }
 
-  // Final safety net
-  emailSources.push('teamind50@gmail.com');
+  // 3. Final safety net (Emergency Fallback)
+  if (recipients.length === 0) {
+    recipients = ['teamind50@gmail.com'];
+  }
 
-  const validEmails = Array.from(new Set(
-    emailSources
-      .filter(e => e && typeof e === 'string' && e.includes('@'))
-      .map(e => e.toLowerCase().trim())
-  ));
-
-  return validEmails.length > 0 ? validEmails : ['teamind50@gmail.com'];
+  // Remove duplicates
+  return Array.from(new Set(recipients));
 }
 
 export default async function handler(req: any, res: any) {
