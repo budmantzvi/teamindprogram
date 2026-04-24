@@ -79,70 +79,69 @@ export default async function handler(req: any, res: any) {
   try {
     // 1. Email to Team
     if (notificationSetting === 'both' || notificationSetting === 'admin') {
-      const { data, error } = await resend.emails.send({
-        from: 'TEAMIND Contact <support@teamindprogram.com>',
-        to: recipients,
-        replyTo: email, // Allow admin to reply directly to user
-        subject: `New Message from ${name}`,
-        html: `
-          <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-            <h2 style="color: #0d9488;">New Contact Form Submission</h2>
-            <p><strong>Name:</strong> ${name}</p>
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
-            <p><strong>Message:</strong></p>
-            <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #0d9488;">
-              ${message.replace(/\n/g, '<br/>')}
+      console.log(`[Vercel Contact] Sending individual admin emails to: ${recipients.join(', ')}`);
+      
+      for (const recipient of recipients) {
+        const { data, error } = await resend.emails.send({
+          from: 'TEAMIND Contact <support@teamindprogram.com>',
+          to: [recipient],
+          replyTo: email, // Allow admin to reply directly to user
+          subject: `New Message from ${name}`,
+          html: `
+            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+              <h2 style="color: #0d9488;">New Contact Form Submission</h2>
+              <p><strong>Name:</strong> ${name}</p>
+              <p><strong>Email:</strong> ${email}</p>
+              <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
+              <p><strong>Message:</strong></p>
+              <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #0d9488;">
+                ${message.replace(/\n/g, '<br/>')}
+              </div>
             </div>
+          `,
+        });
+
+        if (error) {
+          console.error(`[Vercel Contact] Resend error for admin ${recipient}:`, error);
+          results.admin.error = error;
+        } else {
+          results.admin.success = true;
+          results.admin.data = data;
+        }
+        
+        // Small stagger to avoid rate limits
+        await sleep(400); 
+      }
+    }
+
+    // 2. Email to Client
+    const shouldSendToClient = notificationSetting === 'both' || notificationSetting === 'sender';
+
+    if (shouldSendToClient) {
+      console.log(`[Vercel Contact] Sending client confirmation to: ${email}`);
+      const { data, error } = await resend.emails.send({
+        from: 'TEAMIND <support@teamindprogram.com>',
+        to: [email],
+        replyTo: process.env.CONTACT_EMAIL || 'teamind50@gmail.com',
+        subject: `Thanks for reaching out, ${name}!`,
+        html: `
+          <div style="font-family: sans-serif; direction: ltr; padding: 20px;">
+            <h2 style="color: #0d9488;">Hi ${name},</h2>
+            <p>Thank you for contacting <strong>TEAMIND</strong>. We've received your message regarding our pedagogical kit.</p>
+            <p>Our team is reviewing your inquiry and we will get back to you within 24-48 hours.</p>
+            <br />
+            <p>Best regards,</p>
+            <p><strong>The TEAMIND Team</strong></p>
           </div>
         `,
       });
       
       if (error) {
-        console.error("[Vercel Contact] Resend error (admin):", error);
-        results.admin.error = error;
+        console.error("[Vercel Contact] Resend error (client):", error);
+        results.client.error = error;
       } else {
-        results.admin.success = true;
-        results.admin.data = data;
-      }
-
-      await sleep(500);
-    }
-
-    // 2. Email to Client
-    const shouldSendToClient = notificationSetting === 'both' || notificationSetting === 'sender';
-    const isSenderInAdminList = normalizedSenderEmail && recipients.includes(normalizedSenderEmail);
-
-    if (shouldSendToClient) {
-      if (isSenderInAdminList) {
-        console.log(`[Vercel Contact] Sender ${normalizedSenderEmail} is in admin list. Skipping duplicate confirmation.`);
         results.client.success = true;
-        results.client.data = { message: "Skipped - Sender is in Admin list" };
-      } else {
-        const { data, error } = await resend.emails.send({
-          from: 'TEAMIND <support@teamindprogram.com>',
-          to: [email],
-          replyTo: process.env.CONTACT_EMAIL || 'teamind50@gmail.com',
-          subject: `Thanks for reaching out, ${name}!`,
-          html: `
-            <div style="font-family: sans-serif; direction: ltr; padding: 20px;">
-              <h2 style="color: #0d9488;">Hi ${name},</h2>
-              <p>Thank you for contacting <strong>TEAMIND</strong>. We've received your message regarding our pedagogical kit.</p>
-              <p>Our team is reviewing your inquiry and we will get back to you within 24-48 hours.</p>
-              <br />
-              <p>Best regards,</p>
-              <p><strong>The TEAMIND Team</strong></p>
-            </div>
-          `,
-        });
-        
-        if (error) {
-          console.error("[Vercel Contact] Resend error (client):", error);
-          results.client.error = error;
-        } else {
-          results.client.success = true;
-          results.client.data = data;
-        }
+        results.client.data = data;
       }
     }
 
