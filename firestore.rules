@@ -111,5 +111,12 @@ service cloud.firestore {
           request.resource.data.paidAt == request.time
         );
     }
+
+    // Notification Locks (Anti-duplicate system)
+    match /notification_locks/{lockId} {
+      // Allow public write (create/update) for the notification gatekeeper
+      // In production, you would ideally lock this to a server-only service account
+      allow read, write: if true;
+    }
   }
 }

@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, doc, runTransaction, serverTimestamp, setDoc } from 'firebase/firestore';
 import fs from 'fs';
 import path from 'path';
 
@@ -160,11 +160,11 @@ export default async function handler(req: any, res: any) {
   const normalizedCustomerEmail = customerEmail.toLowerCase().trim();
   const isHe = language === 'he';
   
-  // 1. Ensure admins are unique and DO NOT include the customer (they get a separate email)
+  // 1. Ensure admins are unique
   const adminEmails = Array.from(new Set(
     rawAdmins
       .map(r => r.toLowerCase().trim())
-      .filter(r => r && r.includes('@') && r !== normalizedCustomerEmail)
+      .filter(r => r && r.includes('@'))
   ));
   
   console.log(`[Vercel] Notifying #ORD-${orderId} | Admins: [${adminEmails.join(', ')}] | Customer: ${normalizedCustomerEmail}`);

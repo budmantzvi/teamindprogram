@@ -450,8 +450,8 @@ async function startServer() {
     const recipients = getRecipients(adminEmails, adminEmail);
     const normalizedCustomerEmail = customerEmail.toLowerCase().trim();
     
-    // Explicitly separate recipients to avoid crosstalk
-    const adminRecipients = recipients.filter(e => e.toLowerCase() !== normalizedCustomerEmail);
+    // Explicitly separate recipients but don't block admins if they are also the customer
+    const adminRecipients = recipients;
 
     console.log(`[OrderNotify] Processing #${orderId} | Admin Recips: ${adminRecipients.length} | Customer: ${normalizedCustomerEmail}`);
 
