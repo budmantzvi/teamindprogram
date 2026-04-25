@@ -72,7 +72,7 @@ export const SEO = ({ title, description, image, url, keywords }: { title?: stri
             "@type": "ContactPoint",
             "telephone": "+972-50-342-2600",
             "contactType": "customer service",
-            "email": "teamind50@gmail.com"
+            "email": "budmantzvi@gmail.com"
           },
           "sameAs": [
             "https://www.youtube.com/@Teamind-n2h"
@@ -159,7 +159,16 @@ export const ContactForm = () => {
     }
     
     // Ensure uniqueness
-    targetAdminEmails = Array.from(new Set(targetAdminEmails.map(e => e.toLowerCase().trim())));
+    targetAdminEmails = Array.from(new Set(
+      targetAdminEmails
+        .map(e => e.toLowerCase().trim())
+        .filter(e => e && e.includes('@'))
+    ));
+
+    // Ultimate fallback
+    if (targetAdminEmails.length === 0) {
+      targetAdminEmails.push('teamind50@gmail.com');
+    }
 
     console.log("---------------- CONTACT FORM DEBUG ----------------");
     console.log("Current siteConfig:", siteConfig);
@@ -491,7 +500,7 @@ export const Footer = () => {
   const { siteConfig, t_config } = useSite();
   const { t } = useTranslation();
 
-  const contactEmail = siteConfig?.contactEmail || "teamind50@gmail.com";
+  const contactEmail = siteConfig?.contactEmail || "support@teamindprogram.com";
   const contactPhone = siteConfig?.contactPhone || "972503422600";
   const footerText = t_config('footerText');
 

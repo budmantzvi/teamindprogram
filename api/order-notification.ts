@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, runTransaction, serverTimestamp, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, runTransaction, serverTimestamp, setDoc, collection, getDocs, getDoc } from 'firebase/firestore';
 import fs from 'fs';
 import path from 'path';
 
@@ -19,10 +19,59 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 const processedOrders = new Map<string, number>();
 const CACHE_TTL = 30000; // 30 seconds
 
-function getRecipients(adminInput: any) {
+async function getRecipients(adminInput: any) {
   let emailSources: string[] = [];
   
-  // 1. Priority: Input from Admin/Frontend
+  console.log("[Vercel] Starting recipient resolution for order...");
+
+  // 1. Fetch the Master Config from Firestore (config/site)
+  try {
+    const configSnap = await getDoc(doc(db, 'config', 'site'));
+    if (configSnap.exists()) {
+      const configData = configSnap.data();
+      
+      // Specifically look for order admins
+      const orderAdmins = configData.orderNotificationAdmins;
+      if (Array.isArray(orderAdmins) && orderAdmins.length > 0) {
+        console.log(`[Vercel] Found ${orderAdmins.length} admins in config/site order list`);
+        emailSources.push(...orderAdmins);
+      } else {
+        console.log("[Vercel] No orderNotificationAdmins found. Falling back to secondary lists.");
+        // Fallback sequence: Order List -> General List -> All Admins
+        if (Array.isArray(configData.notificationAdmins)) {
+          emailSources.push(...configData.notificationAdmins);
+        }
+        if (Array.isArray(configData.allAdmins)) {
+          emailSources.push(...configData.allAdmins);
+        }
+      }
+      
+      // Always include contactEmail as master fallback
+      if (configData.contactEmail) {
+        emailSources.push(...configData.contactEmail.split(',').map((s: string) => s.trim()));
+      }
+    }
+  } catch (err) {
+    console.error("[Vercel] Failed to fetch site config/site:", err);
+  }
+
+  // 2. Fetch specific admin users from 'admins' collection (backup) - ONLY if nothing found yet
+  if (emailSources.length === 0) {
+    try {
+      const adminSnap = await getDocs(collection(db, 'admins'));
+      adminSnap.forEach(docSnap => {
+        const email = docSnap.id.trim().toLowerCase();
+        if (email.includes('@')) {
+          emailSources.push(email);
+        }
+      });
+      console.log(`[Vercel] Total emails in admins collection: ${adminSnap.size}`);
+    } catch (err) {
+      console.error("[Vercel] Failed to fetch admins collection (Permissions?):", err);
+    }
+  }
+
+  // 3. Add input from Admin/Frontend if provided
   if (adminInput) {
     const rawItems = Array.isArray(adminInput) ? adminInput : [adminInput];
     rawItems.forEach(item => {
@@ -36,28 +85,21 @@ function getRecipients(adminInput: any) {
     });
   }
 
-  // Filter valid emails from input
-  let recipientsFromInput = emailSources
-    .filter(e => e && typeof e === 'string' && e.includes('@'))
-    .map(e => e.toLowerCase().trim());
+  // 5. Filter and deduplicate
+  let finalRecipients = Array.from(new Set(
+    emailSources
+      .filter(e => e && typeof e === 'string' && e.includes('@'))
+      .map(e => e.toLowerCase().trim())
+  ));
 
-  // Use input if available
-  if (recipientsFromInput.length > 0) {
-    return Array.from(new Set(recipientsFromInput));
+  // 6. Hard safety check - ensure teamind50 is there if nothing else worked
+  if (finalRecipients.length === 0) {
+    console.log("[Vercel] No recipients resolved. Using hard fallback.");
+    finalRecipients.push('teamind50@gmail.com');
   }
 
-  // 2. If no admin input, use environment fallback
-  if (process.env.CONTACT_EMAIL) {
-    const envEmails = process.env.CONTACT_EMAIL.split(',')
-      .map(e => e.trim().toLowerCase())
-      .filter(e => e && e.includes('@'));
-    if (envEmails.length > 0) {
-      return Array.from(new Set(envEmails));
-    }
-  }
-
-  // 3. Final safety net (Removed emergency hardcoded fallback)
-  return [];
+  console.log(`[Vercel] Final Resolved Recipients: ${finalRecipients.join(', ')}`);
+  return finalRecipients;
 }
 
 function formatDateForEmail() {
@@ -156,7 +198,7 @@ export default async function handler(req: any, res: any) {
   }
 
   // -- SEPARATED NOTIFICATIONS --
-  const rawAdmins = getRecipients(adminInput);
+  const rawAdmins = await getRecipients(adminInput);
   const normalizedCustomerEmail = customerEmail.toLowerCase().trim();
   const isHe = language === 'he';
   
@@ -167,7 +209,7 @@ export default async function handler(req: any, res: any) {
       .filter(r => r && r.includes('@'))
   ));
   
-  console.log(`[Vercel] Notifying #ORD-${orderId} | Admins: [${adminEmails.join(', ')}] | Customer: ${normalizedCustomerEmail}`);
+  console.log(`[Vercel] Notifying ${orderId.startsWith('ORD-') ? '#' + orderId : '#ORD-' + orderId} | Admins: [${adminEmails.join(', ')}] | Customer: ${normalizedCustomerEmail}`);
 
   try {
     const orderDate = formatDateForEmail();

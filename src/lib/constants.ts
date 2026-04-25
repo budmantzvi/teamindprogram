@@ -46,9 +46,9 @@ export const FALLBACK_IMAGES: any = {
 };
 
 export const DEFAULT_CONFIG: any = {
-  contactEmail: 'teamind50@gmail.com', // Primary fallback
-  notificationAdmins: ['teamind50@gmail.com', 'budmantzvi@gmail.com'], // Hardcoded safety defaults
-  allAdmins: ['teamind50@gmail.com', 'budmantzvi@gmail.com'],
+  contactEmail: 'support@teamindprogram.com', // Primary fallback
+  notificationAdmins: ['budmantzvi@gmail.com'], // Hardcoded safety defaults
+  allAdmins: ['budmantzvi@gmail.com'],
   contactPhone: '972504170209',
   tagline: 'Thinking, Emotions, Attention & Motivation IN Development',
   footerText: 'Empowering children through executive function development.',
@@ -116,7 +116,7 @@ export const DEFAULT_CONFIG: any = {
   kitPrice: 2300,
   emailNotifications: 'both',
   orderNotifications: 'both',
-  orderNotificationAdmins: ['teamind50@gmail.com', 'budmantzvi@gmail.com'], // Hardcoded safety defaults
+  orderNotificationAdmins: ['budmantzvi@gmail.com'], // Hardcoded safety defaults
   showHero: true,
   showVideo: true,
   showAbout: true,

@@ -1,13 +1,75 @@
 import { Resend } from "resend";
 
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import fs from 'fs';
+import path from 'path';
+
+// Read config safely
+const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
+const firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+
+// Initialize Firebase for the API
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-function getRecipients(adminInput: any) {
+async function getRecipients(adminInput: any) {
   let emailSources: string[] = [];
   
-  // 1. Priority: Input from Admin/Frontend
+  console.log("[Vercel] Starting recipient resolution for contact...");
+
+  // 1. Fetch the Master Config from Firestore (config/site)
+  try {
+    const configSnap = await getDoc(doc(db, 'config', 'site'));
+    if (configSnap.exists()) {
+      const configData = configSnap.data();
+      
+      // Specifically look for notification admins for contacts
+      const contactAdmins = configData.notificationAdmins;
+      if (Array.isArray(contactAdmins) && contactAdmins.length > 0) {
+        console.log(`[Vercel] Found ${contactAdmins.length} admins in config/site contact list`);
+        emailSources.push(...contactAdmins);
+      } else {
+        console.log("[Vercel] No notificationAdmins found. Falling back to secondary lists.");
+        // Fallback sequence: General List -> Order List -> All Admins
+        if (Array.isArray(configData.orderNotificationAdmins)) {
+           emailSources.push(...configData.orderNotificationAdmins);
+        }
+        if (Array.isArray(configData.allAdmins)) {
+          emailSources.push(...configData.allAdmins);
+        }
+      }
+      
+      // Always include contactEmail as master fallback
+      if (configData.contactEmail) {
+        emailSources.push(...configData.contactEmail.split(',').map((s: string) => s.trim()));
+      }
+    }
+  } catch (err) {
+    console.error("[Vercel] Failed to fetch site config/site:", err);
+  }
+
+  // 2. Fetch specific admin users from 'admins' collection (backup) - ONLY if nothing found yet
+  if (emailSources.length === 0) {
+    try {
+      const adminSnap = await getDocs(collection(db, 'admins'));
+      adminSnap.forEach(docSnap => {
+        const email = docSnap.id.trim().toLowerCase();
+        if (email.includes('@')) {
+          emailSources.push(email);
+        }
+      });
+      console.log(`[Vercel] Total emails in admins collection: ${adminSnap.size}`);
+    } catch (err) {
+      console.error("[Vercel] Failed to fetch admins collection (Permissions?):", err);
+    }
+  }
+
+  // 3. Add input from Admin/Frontend if provided
   if (adminInput) {
     const rawItems = Array.isArray(adminInput) ? adminInput : [adminInput];
     rawItems.forEach(item => {
@@ -21,28 +83,21 @@ function getRecipients(adminInput: any) {
     });
   }
 
-  // Filter valid emails from input
-  let recipientsFromInput = emailSources
-    .filter(e => e && typeof e === 'string' && e.includes('@'))
-    .map(e => e.toLowerCase().trim());
+  // 5. Filter and deduplicate
+  let finalRecipients = Array.from(new Set(
+    emailSources
+      .filter(e => e && typeof e === 'string' && e.includes('@'))
+      .map(e => e.toLowerCase().trim())
+  ));
 
-  // Use input if available
-  if (recipientsFromInput.length > 0) {
-    return Array.from(new Set(recipientsFromInput));
+  // 6. Hard safety check
+  if (finalRecipients.length === 0) {
+    console.log("[Vercel] No recipients resolved. Using hard fallback.");
+    finalRecipients.push('teamind50@gmail.com');
   }
 
-  // 2. If no admin input, use environment fallback
-  if (process.env.CONTACT_EMAIL) {
-    const envEmails = process.env.CONTACT_EMAIL.split(',')
-      .map(e => e.trim().toLowerCase())
-      .filter(e => e && e.includes('@'));
-    if (envEmails.length > 0) {
-      return Array.from(new Set(envEmails));
-    }
-  }
-
-  // 3. Final safety net (Removed emergency hardcoded fallback)
-  return [];
+  console.log(`[Vercel] Final Resolved Recipients: ${finalRecipients.join(', ')}`);
+  return finalRecipients;
 }
 
 export default async function handler(req: any, res: any) {
@@ -63,7 +118,7 @@ export default async function handler(req: any, res: any) {
   const adminInput = body.adminEmails || body.adminEmail || null;
   const notificationSetting = body.notificationSetting || body.emailNotifications || 'both';
 
-  const recipients = getRecipients(adminInput);
+  const recipients = await getRecipients(adminInput);
   const normalizedSenderEmail = email.toLowerCase().trim();
   console.log(`[Vercel Contact] From: ${email}, Recipients: ${recipients.join(', ')}`);
 
@@ -98,7 +153,7 @@ export default async function handler(req: any, res: any) {
             <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
             <p><strong>Message:</strong></p>
             <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #0d9488;">
-              ${message.replace(/\n/g, '<br/>')}
+              ${(message || '').replace(/\n/g, '<br/>')}
             </div>
           </div>
         `,
@@ -118,12 +173,19 @@ export default async function handler(req: any, res: any) {
 
     if (shouldSendToClient) {
       console.log(`[Vercel Contact] Sending client confirmation to: ${email}`);
-      const { data, error } = await resend.emails.send({
-        from: 'TEAMIND <support@teamindprogram.com>',
-        to: [email],
-        replyTo: process.env.CONTACT_EMAIL || 'teamind50@gmail.com',
-        subject: `Thanks for reaching out, ${name}!`,
-        html: `
+      const isHe = language === 'he';
+      
+      const subject = isHe ? `תודה על פנייתך, ${name}!` : `Thanks for reaching out, ${name}!`;
+      const html = isHe ? `
+          <div style="font-family: sans-serif; direction: rtl; padding: 20px;">
+            <h2 style="color: #0d9488;">שלום ${name},</h2>
+            <p>תודה שפנית ל-<strong>TEAMIND</strong>. קיבלנו את הודעתך בנוגע לערכה הפדגוגית שלנו.</p>
+            <p>הצוות שלנו בוחן את פנייתך ונחזור אליך בהקדם, תוך 24-48 שעות.</p>
+            <br />
+            <p>בברכה,</p>
+            <p><strong>צוות TEAMIND</strong></p>
+          </div>
+      ` : `
           <div style="font-family: sans-serif; direction: ltr; padding: 20px;">
             <h2 style="color: #0d9488;">Hi ${name},</h2>
             <p>Thank you for contacting <strong>TEAMIND</strong>. We've received your message regarding our pedagogical kit.</p>
@@ -132,7 +194,14 @@ export default async function handler(req: any, res: any) {
             <p>Best regards,</p>
             <p><strong>The TEAMIND Team</strong></p>
           </div>
-        `,
+      `;
+
+      const { data, error } = await resend.emails.send({
+        from: 'TEAMIND <support@teamindprogram.com>',
+        to: [email],
+        replyTo: process.env.CONTACT_EMAIL || (recipients[0] || 'support@teamindprogram.com'),
+        subject: subject,
+        html: html,
       });
       
       if (error) {

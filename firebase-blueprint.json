@@ -74,6 +74,19 @@
         }
       },
       "description": "List of authorized administrator emails"
+    },
+    "/users/{userId}": {
+      "schema": {
+        "title": "User",
+        "description": "User profile with role information",
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "is_admin": { "type": "boolean" },
+          "role": { "type": "string" }
+        }
+      },
+      "description": "User profiles for role-based access"
     }
   }
 }

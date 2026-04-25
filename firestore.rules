@@ -19,7 +19,6 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && 
              request.auth.token.email != null && (
-               request.auth.token.email.lower() == "teamind50@gmail.com" || 
                request.auth.token.email.lower() == "budmantzvi@gmail.com" || 
                request.auth.token.email.lower() == "budmantz@gmail.com" ||
                exists(/databases/$(database)/documents/admins/$(request.auth.token.email.lower()))
@@ -78,7 +77,7 @@ service cloud.firestore {
     match /admins/{adminEmail} {
       // Allow public read to facilitate the registration whitelist check
       allow read: if true;
-      allow create: if isAdmin() || (isSignedIn() && request.auth.token.email != null && (request.auth.token.email.lower() == "teamind50@gmail.com" || request.auth.token.email.lower() == "budmantzvi@gmail.com" || request.auth.token.email.lower() == "budmantz@gmail.com"));
+      allow create: if isAdmin() || (isSignedIn() && request.auth.token.email != null && (request.auth.token.email.lower() == "budmantzvi@gmail.com" || request.auth.token.email.lower() == "budmantz@gmail.com"));
       allow update, delete: if isAdmin();
     }
 
@@ -110,6 +109,12 @@ service cloud.firestore {
           request.resource.data.status == 'paid' &&
           request.resource.data.paidAt == request.time
         );
+    }
+
+    // Users: Private data, Admin read access
+    match /users/{userId} {
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
+      allow write: if isSignedIn() && request.auth.uid == userId;
     }
 
     // Notification Locks (Anti-duplicate system)

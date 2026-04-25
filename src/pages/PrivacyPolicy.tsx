@@ -76,7 +76,7 @@ export default function PrivacyPolicy() {
             <section>
               <h2 className="text-2xl font-serif font-bold text-slate-900 mb-4">{t('legal.contact')}</h2>
               <p>
-                {t('legal.contact_text', { defaultValue: "If you have questions or comments about this policy, you may email us at teamind50@gmail.com." })}
+                {t('legal.contact_text', { defaultValue: "If you have questions or comments about this policy, you may email us at support@teamindprogram.com." })}
               </p>
             </section>
 

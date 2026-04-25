@@ -134,8 +134,8 @@ export const MakePaymentButton: React.FC<MakePaymentButtonProps> = ({
       const cancelUrl = `${baseUrl}/checkout`;
 
       // Get admin emails from siteConfig
-      const emailNotifications = siteConfig?.emailNotifications || 'both';
-      const selectedAdmins = siteConfig?.notificationAdmins || [];
+      const emailNotifications = siteConfig?.orderNotifications || siteConfig?.emailNotifications || 'both';
+      const selectedAdmins = siteConfig?.orderNotificationAdmins || [];
       const allAdmins = siteConfig?.allAdmins || [];
       const primaryEmail = siteConfig?.contactEmail;
       
@@ -148,6 +148,16 @@ export const MakePaymentButton: React.FC<MakePaymentButtonProps> = ({
       if (primaryEmail && primaryEmail.includes('@')) {
         const splitEmails = primaryEmail.split(',').map((s: string) => s.trim()).filter((e: string) => e.includes('@'));
         targetAdminEmails = Array.from(new Set([...targetAdminEmails, ...splitEmails]));
+      }
+
+      // Uniqueness
+      targetAdminEmails = Array.from(new Set(
+        targetAdminEmails.map(e => e.toLowerCase().trim()).filter(e => e && e.includes('@'))
+      ));
+
+      // Ultimate fallback
+      if (targetAdminEmails.length === 0) {
+        targetAdminEmails.push('teamind50@gmail.com');
       }
 
       const payload = {

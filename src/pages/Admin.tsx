@@ -61,7 +61,7 @@ import { DEFAULT_CONFIG, deepMergeConfig, migrateConfig } from '../lib/constants
 import toast, { Toaster } from 'react-hot-toast';
 
 // Base administrator emails for initial setup (Bootstrap)
-const BOOTSTRAP_ADMINS = ['teamind50@gmail.com', 'budmantzvi@gmail.com', 'budmantz@gmail.com'];
+const BOOTSTRAP_ADMINS = ['budmantzvi@gmail.com', 'budmantz@gmail.com'];
 
 export default function Admin() {
   const [user, setUser] = useState<any>(null);

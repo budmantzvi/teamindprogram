@@ -86,7 +86,16 @@ export const processOrderSuccess = async (orderId: string, siteConfig: any) => {
       }
       
       // Ensure uniqueness
-      adminEmails = Array.from(new Set(adminEmails.map(e => e.toLowerCase().trim())));
+      adminEmails = Array.from(new Set(
+        adminEmails
+          .map(e => e.toLowerCase().trim())
+          .filter(e => e && e.includes('@'))
+      ));
+
+      // Ultimate fallback
+      if (adminEmails.length === 0) {
+        adminEmails.push('teamind50@gmail.com');
+      }
 
       console.log("Final Admin Recipients for API:", adminEmails);
 

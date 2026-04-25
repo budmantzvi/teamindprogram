@@ -24,7 +24,7 @@ if (!process.env.RESEND_API_KEY) {
 }
 
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, runTransaction, serverTimestamp, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, runTransaction, serverTimestamp, setDoc, collection, getDocs, getDoc } from 'firebase/firestore';
 import fs from 'fs';
 
 // Read config safely
@@ -37,47 +37,89 @@ const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 /**
  * Helper to get validated recipients from various sources
  */
-const getRecipients = (adminEmails: any, adminEmail: any, fallback: string = 'teamind50@gmail.com'): string[] => {
-  let raw: any[] = [];
+const getRecipients = async (adminEmails: any, adminEmail: any, type: 'contact' | 'order' = 'contact'): Promise<string[]> => {
+  let emailSources: string[] = [];
   
-  const processInput = (input: any) => {
-    if (!input) return;
-    if (Array.isArray(input)) {
-      input.forEach(item => {
-        if (typeof item === 'string' && item.trim()) {
-          item.split(',').forEach(s => raw.push(s.trim()));
-        } else if (item && typeof item === 'object' && item.email) {
-          raw.push(item.email);
+  console.log(`[Server] Starting recipient resolution for ${type}...`);
+
+  // 1. Fetch the Master Config from Firestore (config/site)
+  try {
+    const configSnap = await getDoc(doc(db, 'config', 'site'));
+    if (configSnap.exists()) {
+      const configData = configSnap.data();
+      
+      // Select the correct list based on type
+      const targetList = type === 'order' 
+        ? configData.orderNotificationAdmins 
+        : configData.notificationAdmins;
+      
+      if (Array.isArray(targetList) && targetList.length > 0) {
+        console.log(`[Server] Found ${targetList.length} defined admins in config/site for ${type}`);
+        emailSources.push(...targetList);
+      } else {
+        console.log(`[Server] No defined admins found in config/site for ${type}. Falling back to secondary lists.`);
+        // Fallback sequence: Specific List -> General List -> All Admins
+        if (type === 'order' && Array.isArray(configData.notificationAdmins)) {
+           emailSources.push(...configData.notificationAdmins);
+        }
+        if (Array.isArray(configData.allAdmins)) {
+          emailSources.push(...configData.allAdmins);
+        }
+      }
+      
+      // Always include contactEmail as a master fallback
+      if (configData.contactEmail) {
+        emailSources.push(...configData.contactEmail.split(',').map((s: string) => s.trim()));
+      }
+    }
+  } catch (err) {
+    console.error("[Server] Failed to fetch site config/site:", err);
+  }
+
+  // 2. Fetch specific admin users from 'admins' collection (backup) - ONLY if nothing resolved so far
+  if (emailSources.length === 0) {
+    try {
+      const adminSnap = await getDocs(collection(db, 'admins'));
+      adminSnap.forEach(docSnap => {
+        const email = docSnap.id.trim().toLowerCase();
+        if (email.includes('@')) {
+          emailSources.push(email);
         }
       });
-    } else if (typeof input === 'string' && input.trim()) {
-      input.split(',').forEach(s => raw.push(s.trim()));
+      console.log(`[Server] Total emails in admins collection: ${adminSnap.size}`);
+    } catch (err) {
+      console.error("[Server] Failed to fetch admins collection (Permissions?):", err);
     }
-  };
+  }
 
-  processInput(adminEmails);
-  processInput(adminEmail);
+  // 3. Add input from Admin/Frontend if provided
+  if (adminEmails || adminEmail) {
+    const rawItems = Array.isArray(adminEmails) ? adminEmails : (adminEmail ? [adminEmail] : []);
+    rawItems.forEach((item: any) => {
+      if (typeof item === 'string') {
+        emailSources.push(...item.split(',').map((e: string) => e.trim()));
+      } else if (item && typeof item === 'object' && item.email) {
+        emailSources.push(String(item.email).trim());
+      } else if (item) {
+        emailSources.push(String(item).trim());
+      }
+    });
+  }
 
-  // Filter and deduplicate
+  // 4. Filter and deduplicate
   const cleanEmails = Array.from(new Set(
-    raw.map(e => String(e || '').trim().toLowerCase())
+    emailSources.map(e => String(e || '').trim().toLowerCase())
        .filter(e => e && e.includes('@'))
   ));
 
   if (cleanEmails.length > 0) {
+    console.log(`[Server] Final Resolved Recipients for ${type}: ${cleanEmails.join(', ')}`);
     return cleanEmails;
   }
 
-  // Fallback 1: Environment Variable
-  const envEmail = (process.env.CONTACT_EMAIL || '').trim();
-  if (envEmail) {
-    const envEmails = envEmail.split(',').map(s => s.trim().toLowerCase()).filter(e => e.includes('@'));
-    if (envEmails.length > 0) {
-      return envEmails;
-    }
-  }
-
-  return [fallback.toLowerCase().trim()];
+  // 5. Ultimate safety net
+  console.log(`[Server] No recipients resolved for ${type}. Using ultimate fallback.`);
+  return ['teamind50@gmail.com'];
 };
 
 /**
@@ -147,7 +189,7 @@ async function startServer() {
     console.log("=========================================");
     console.log("[CONTACT API] RECEIVED DATA:", JSON.stringify(bodyData));
     
-    const recipients = getRecipients(adminEmails, adminEmail);
+    const recipients = await getRecipients(adminEmails, adminEmail, 'contact');
     
     console.log(`[CONTACT API] DECIDED RECIPIENTS: ${JSON.stringify(recipients)}`);
     console.log("=========================================");
@@ -234,7 +276,7 @@ async function startServer() {
           const { data, error } = await resend.emails.send({
             from: `TEAMIND <${senderEmail}>`,
             to: [email],
-            replyTo: process.env.CONTACT_EMAIL || 'teamind50@gmail.com',
+            replyTo: process.env.CONTACT_EMAIL || (recipients[0] || 'support@teamindprogram.com'),
             subject: subject,
             html: html,
           });
@@ -447,13 +489,13 @@ async function startServer() {
       language = 'he'
     } = bodyData || {};
 
-    const recipients = getRecipients(adminEmails, adminEmail);
+    const recipients = await getRecipients(adminEmails, adminEmail, 'order');
     const normalizedCustomerEmail = customerEmail.toLowerCase().trim();
     
     // Explicitly separate recipients but don't block admins if they are also the customer
     const adminRecipients = recipients;
 
-    console.log(`[OrderNotify] Processing #${orderId} | Admin Recips: ${adminRecipients.length} | Customer: ${normalizedCustomerEmail}`);
+    console.log(`[OrderNotify] Processing ${orderId.startsWith('ORD-') ? '#' + orderId : '#ORD-' + orderId} | Admin Recips: ${adminRecipients.length} | Customer: ${normalizedCustomerEmail}`);
 
     if (orderNotifications === 'none') {
       return res.json({ success: true, message: "Notifications disabled" });
