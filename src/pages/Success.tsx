@@ -26,6 +26,29 @@ const SuccessPage = () => {
   const orderIdFromStorage = localStorage.getItem('last_order_id');
   const orderId = orderIdFromUrl || orderIdFromStorage || 'UNKNOWN';
 
+  // Immediate language check based on cache to avoid flash of English
+  useEffect(() => {
+    if (orderId !== 'UNKNOWN') {
+      const cachedOrder = localStorage.getItem(`order_data_${orderId}`);
+      if (cachedOrder) {
+        try {
+          const data = JSON.parse(cachedOrder);
+          if (data.language && data.language !== i18n.language) {
+            console.log(`[Fast Path] Detected language ${data.language} from cache`);
+            i18n.changeLanguage(data.language);
+            
+            const targetIsHebrew = data.language === 'he';
+            if (targetIsHebrew && !isOnHebrewPath) {
+              navigate(`/he/success?${searchParams.toString()}`, { replace: true });
+            } else if (!targetIsHebrew && isOnHebrewPath) {
+              navigate(`/success?${searchParams.toString()}`, { replace: true });
+            }
+          }
+        } catch (e) {}
+      }
+    }
+  }, [orderId, i18n, isOnHebrewPath, navigate, searchParams]);
+
   useEffect(() => {
     const processOrder = async () => {
       if (siteConfig && orderId !== 'UNKNOWN' && !hasProcessed.current) {

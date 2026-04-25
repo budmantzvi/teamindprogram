@@ -526,42 +526,47 @@ async function startServer() {
     const orderDate = formatDateForEmail();
     const isHe = language === 'he';
 
+    const adminHtml = `
+      <div style="font-family: sans-serif; padding: 30px; border: 1px solid #eee; border-radius: 20px; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 10px; margin-bottom: 20px;">New Order Received!</h2>
+        <div style="margin: 20px 0;">
+          <p style="font-size: 18px;"><strong>Date:</strong> ${orderDate}</p>
+          <p style="font-size: 18px;"><strong>Order ID:</strong> <span dir="ltr">#${orderId}</span></p>
+          <p><strong>Program:</strong> ${program}</p>
+          <p><strong>Amount:</strong> ₪${amount}</p>
+        </div>
+        <div style="background: #f9fafb; padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+          <h3 style="margin-top: 0; color: #334155;">Customer Details</h3>
+          <p><strong>Name:</strong> ${customerName}</p>
+          <p><strong>Email:</strong> ${customerEmail}</p>
+          <p><strong>Phone:</strong> ${phone}</p>
+        </div>
+        ${shippingAddress ? `
+        <div style="background: #f0fdfa; padding: 20px; border-radius: 15px; border: 1px solid #ccfbf1;">
+          <h3 style="margin-top: 0; color: #0f766e;">Shipping Address</h3>
+          <p style="margin-bottom: 0;">
+            ${shippingAddress.street || ''} ${shippingAddress.houseNumber || ''}<br/>
+            ${shippingAddress.apartment ? `דירה ${shippingAddress.apartment}<br/>` : ''}
+            ${shippingAddress.city || ''}<br/>
+            ${shippingAddress.zipCode ? `מיקוד: ${shippingAddress.zipCode}` : ''}
+          </p>
+        </div>
+        ` : ''}
+      </div>
+    `;
+
     // --- DECOUPLED LOGIC: ADMINS ---
     if ((orderNotifications === 'both' || orderNotifications === 'admin') && adminRecipients.length > 0) {
-      emailTasks.push(resend.emails.send({
-        from: `TEAMIND <${senderEmail}>`,
-        to: adminRecipients,
-        replyTo: normalizedCustomerEmail || undefined,
-        subject: `New Order #${orderId} - ${customerName}`,
-        html: `
-          <div style="font-family: sans-serif; padding: 30px; border: 1px solid #eee; border-radius: 20px; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 10px; margin-bottom: 20px;">New Order Received!</h2>
-            <div style="margin: 20px 0;">
-              <p style="font-size: 18px;"><strong>Date:</strong> ${orderDate}</p>
-              <p style="font-size: 18px;"><strong>Order ID:</strong> <span dir="ltr">#${orderId}</span></p>
-              <p><strong>Program:</strong> ${program}</p>
-              <p><strong>Amount:</strong> ₪${amount}</p>
-            </div>
-            <div style="background: #f9fafb; padding: 20px; border-radius: 15px; margin-bottom: 20px;">
-              <h3 style="margin-top: 0; color: #334155;">Customer Details</h3>
-              <p><strong>Name:</strong> ${customerName}</p>
-              <p><strong>Email:</strong> ${customerEmail}</p>
-              <p><strong>Phone:</strong> ${phone}</p>
-            </div>
-            ${shippingAddress ? `
-            <div style="background: #f0fdfa; padding: 20px; border-radius: 15px; border: 1px solid #ccfbf1;">
-              <h3 style="margin-top: 0; color: #0f766e;">Shipping Address</h3>
-              <p style="margin-bottom: 0;">
-                ${shippingAddress.street || ''} ${shippingAddress.houseNumber || ''}<br/>
-                ${shippingAddress.apartment ? `דירה ${shippingAddress.apartment}<br/>` : ''}
-                ${shippingAddress.city || ''}<br/>
-                ${shippingAddress.zipCode ? `מיקוד: ${shippingAddress.zipCode}` : ''}
-              </p>
-            </div>
-            ` : ''}
-          </div>
-        `,
-      }));
+      // Send individual emails to each admin so they see themselves in the "To" field
+      for (const recipient of adminRecipients) {
+        emailTasks.push(resend.emails.send({
+          from: `TEAMIND <${senderEmail}>`,
+          to: recipient,
+          replyTo: normalizedCustomerEmail || undefined,
+          subject: `New Order #${orderId} - ${customerName}`,
+          html: adminHtml
+        }));
+      }
     }
 
     // --- DECOUPLED LOGIC: CUSTOMER ---
