@@ -130,8 +130,9 @@ export const MakePaymentButton: React.FC<MakePaymentButtonProps> = ({
       // 3. Call Make.com with the Order ID
       const isProduction = !window.location.hostname.includes('localhost') && !window.location.hostname.includes('ais-dev');
       const baseUrl = isProduction ? 'https://teamindprogram.com' : window.location.origin;
-      const successUrl = `${baseUrl}/success?orderId=${orderId}`;
-      const cancelUrl = `${baseUrl}/checkout`;
+      const prefix = i18n.language === 'he' ? '/he' : '';
+      const successUrl = `${baseUrl}${prefix}/success?orderId=${orderId}`;
+      const cancelUrl = `${baseUrl}${prefix}/checkout`;
 
       // Get admin emails from siteConfig
       const emailNotifications = siteConfig?.orderNotifications || siteConfig?.emailNotifications || 'both';

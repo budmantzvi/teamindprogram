@@ -23,9 +23,9 @@ const SuccessPage = () => {
   useEffect(() => {
     if (siteConfig && orderId !== 'UNKNOWN' && !hasProcessed.current) {
       hasProcessed.current = true;
-      processOrderSuccess(orderId, siteConfig);
+      processOrderSuccess(orderId, siteConfig, i18n.language);
     }
-  }, [orderId, siteConfig]);
+  }, [orderId, siteConfig, i18n.language]);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">

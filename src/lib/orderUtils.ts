@@ -1,7 +1,7 @@
 import { db } from './firebase';
 import { collection, query, where, getDocs, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 
-export const processOrderSuccess = async (orderId: string, siteConfig: any) => {
+export const processOrderSuccess = async (orderId: string, siteConfig: any, language: string = 'he') => {
   if (!orderId || orderId === 'UNKNOWN') {
     console.warn("No Order ID found for processing.");
     return;
@@ -107,7 +107,7 @@ export const processOrderSuccess = async (orderId: string, siteConfig: any) => {
           shippingAddress: orderData.shippingAddress,
           adminEmails: adminEmails,
           orderNotifications: siteConfig?.orderNotifications || 'both',
-          language: localStorage.getItem('i18nextLng') || 'he',
+          language: language,
           source: 'client'
         })
       });
