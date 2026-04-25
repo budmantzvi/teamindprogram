@@ -14,6 +14,7 @@ interface ProgramFlipCardProps {
 export const ProgramFlipCard = ({ title, description, link, image, color }: ProgramFlipCardProps) => {
   const { t, i18n } = useTranslation();
   const isHe = i18n.language === 'he';
+  const prefix = isHe ? '/he' : '';
 
   return (
     <div className="group h-[480px] md:h-[420px] lg:h-[480px] [perspective:1000px]">
@@ -33,7 +34,7 @@ export const ProgramFlipCard = ({ title, description, link, image, color }: Prog
             </div>
           </div>
         </div>
-
+ 
         {/* Back Side */}
         <div className={`absolute inset-0 h-full w-full rounded-[40px] ${color} p-6 md:p-8 flex flex-col justify-center items-center text-center text-white [transform:rotateY(180deg)] [backface-visibility:hidden] shadow-2xl`}>
           <h3 className="text-xl md:text-2xl font-serif font-bold mb-4 shrink-0">{title}</h3>
@@ -43,7 +44,7 @@ export const ProgramFlipCard = ({ title, description, link, image, color }: Prog
             </p>
           </div>
           <Link 
-            to={link} 
+            to={`${prefix}${link}`} 
             className="shrink-0 px-6 md:px-8 py-3 md:py-4 bg-white text-slate-900 font-bold rounded-full hover:bg-slate-100 transition-all active:scale-95 text-sm md:text-base"
           >
             {t('common.goToProgram', { defaultValue: 'Go to Program Page' })}

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from "motion/react";
+import { Link, useLocation } from "react-router-dom";
 import { 
   Brain, Users, Target, Zap, Clock, Heart, 
   ChevronRight, ArrowRight, MessageSquare, ShieldCheck,
@@ -63,12 +64,28 @@ export default function Home() {
   const [isMarqueePaused, setIsMarqueePaused] = useState(false);
   const { siteConfig, siteImages, t_config } = useSite();
   const { t, i18n } = useTranslation();
+  const location = useLocation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    const hash = window.location.hash;
+    const hash = location.hash;
     if (hash) {
+      const id = hash.replace('#', '');
+      const element = document.getElementById(id);
+      if (element) {
+        // Small delay to ensure render is complete
+        const timer = setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [location.hash]);
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && !location.hash) { // Handle initial load with hash if router didn't catch it
       const id = hash.replace('#', '');
       const element = document.getElementById(id);
       if (element) {
@@ -109,6 +126,7 @@ export default function Home() {
 
   // Use localized versions of arrays if they exist in siteConfig
   const isHe = i18n.language === 'he';
+  const prefix = isHe ? '/he' : '';
   const charactersList = t_config('charactersList');
   const whyCards = t_config('whyCards');
   const faqsList = t_config('faqs');
@@ -222,14 +240,14 @@ export default function Home() {
                 {heroSubtitle}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <a href="#program" className="px-8 py-4 bg-brand-light-blue text-white font-black rounded-full text-base hover:bg-brand-light-blue/90 transition-all hover:scale-105 shadow-2xl shadow-brand-light-blue/20 flex items-center justify-center gap-2">
+                <Link to={`${prefix}/#program`} className="px-8 py-4 bg-brand-light-blue text-white font-black rounded-full text-base hover:bg-brand-light-blue/90 transition-all hover:scale-105 shadow-2xl shadow-brand-light-blue/20 flex items-center justify-center gap-2">
                   {heroBtnPrimary}
                   <ArrowRight className={`w-5 h-5 ${isHe ? 'rotate-180' : ''}`} />
-                </a>
-                <a href="#video" className="px-8 py-4 bg-white text-slate-900 font-black rounded-full text-base border border-slate-100 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm">
+                </Link>
+                <Link to={`${prefix}/#video`} className="px-8 py-4 bg-white text-slate-900 font-black rounded-full text-base border border-slate-100 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm">
                   {heroBtnSecondary}
                   <Play className={`w-5 h-5 fill-current ${isHe ? 'rotate-180' : ''}`} />
-                </a>
+                </Link>
               </div>
             </motion.div>
 

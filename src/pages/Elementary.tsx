@@ -16,6 +16,7 @@ export default function Elementary() {
   const { siteConfig, siteImages, t_config } = useSite();
   const { t, i18n } = useTranslation();
   const isHe = i18n.language === 'he';
+  const prefix = isHe ? '/he' : '';
 
   const pageData = {
     title: t_config('elementary.title'),
@@ -100,7 +101,7 @@ export default function Elementary() {
               {pageData.subtitle}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Link to="/checkout?program=Elementary+Kit" className="px-10 py-5 bg-brand-light-blue text-white font-bold rounded-full text-lg hover:bg-brand-light-blue/90 transition-all hover:scale-105 shadow-xl shadow-brand-light-blue/20 flex items-center justify-center gap-2">
+              <Link to={`${prefix}/checkout?program=Elementary+Kit`} className="px-10 py-5 bg-brand-light-blue text-white font-bold rounded-full text-lg hover:bg-brand-light-blue/90 transition-all hover:scale-105 shadow-xl shadow-brand-light-blue/20 flex items-center justify-center gap-2">
                 {t('programs.getKit')}
                 <ArrowRight className={`w-5 h-5 ${isHe ? 'rotate-180' : ''}`} />
               </Link>
@@ -232,7 +233,7 @@ export default function Elementary() {
                   <p className="text-brand-orange font-black uppercase tracking-widest text-sm">{t('programs.complete_program_kit')}</p>
                   <p className="text-slate-400 font-bold">{t('programs.all_inclusive')}</p>
                 </div>
-                <Link to="/checkout?program=Elementary+Kit" className="w-full py-5 bg-brand-orange text-white font-black rounded-full text-xl hover:bg-brand-orange/90 transition-all shadow-2xl shadow-brand-orange/20 flex items-center justify-center gap-3">
+                <Link to={`${prefix}/checkout?program=Elementary+Kit`} className="w-full py-5 bg-brand-orange text-white font-black rounded-full text-xl hover:bg-brand-orange/90 transition-all shadow-2xl shadow-brand-orange/20 flex items-center justify-center gap-3">
                   {t('programs.purchase')}
                   <ArrowRight className={`w-6 h-6 ${isHe ? 'rotate-180' : ''}`} />
                 </Link>
@@ -249,7 +250,7 @@ export default function Elementary() {
           <p className="text-xl text-brand-green/10 mb-12 max-w-2xl mx-auto font-medium">
             {t('programs.join')}
           </p>
-          <Link to="/#contact" className="inline-flex items-center gap-2 px-10 py-5 bg-white text-brand-green font-bold rounded-full text-lg hover:bg-slate-100 hover:scale-105 transition-all shadow-2xl">
+          <Link to={`${prefix}/#contact`} className="inline-flex items-center gap-2 px-10 py-5 bg-white text-brand-green font-bold rounded-full text-lg hover:bg-slate-100 hover:scale-105 transition-all shadow-2xl">
             {t('programs.contact')}
             <ArrowRight className={`w-5 h-5 ${isHe ? 'rotate-180' : ''}`} />
           </Link>

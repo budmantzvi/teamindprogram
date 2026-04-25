@@ -7,10 +7,12 @@ export default function PrivacyPolicy() {
   const { t, i18n } = useTranslation();
   const isHe = i18n.language === 'he';
 
+  const prefix = isHe ? '/he' : '';
+
   return (
     <div className="min-h-screen bg-[#fdfbf7] text-slate-900 font-sans selection:bg-teal-100 selection:text-teal-900 pt-32 md:pt-40 pb-24">
       <div className="max-w-4xl mx-auto px-6">
-        <Link to="/" className="inline-flex items-center gap-2 text-teal-600 font-bold mb-12 hover:gap-3 transition-all">
+        <Link to={prefix || "/"} className="inline-flex items-center gap-2 text-teal-600 font-bold mb-12 hover:gap-3 transition-all">
           {isHe ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
           {t('success.backHome')}
         </Link>

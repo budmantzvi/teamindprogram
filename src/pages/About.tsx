@@ -13,6 +13,7 @@ export default function About() {
   const { siteConfig, siteImages, t_config } = useSite();
   const { t, i18n } = useTranslation();
   const isHe = i18n.language === 'he';
+  const prefix = isHe ? '/he' : '';
 
   const aboutTitle = t_config('aboutTitle') || t('home.aboutTitle');
   const aboutSubtitle = t_config('aboutSubtitle') || t('home.aboutSubtitle');
@@ -67,7 +68,7 @@ export default function About() {
               </p>
             )}
             <div className="pt-8">
-              <Link to="/#contact" className="px-10 py-5 bg-brand-orange text-white font-bold rounded-full text-lg hover:bg-brand-orange/90 transition-all hover:scale-105 shadow-xl shadow-brand-orange/20 flex items-center justify-center w-fit gap-2">
+              <Link to={`${prefix}/#contact`} className="px-10 py-5 bg-brand-orange text-white font-bold rounded-full text-lg hover:bg-brand-orange/90 transition-all hover:scale-105 shadow-xl shadow-brand-orange/20 flex items-center justify-center w-fit gap-2">
                 {t('programs.contact')}
                 <ArrowRight className={`w-5 h-5 ${isHe ? 'rotate-180' : ''}`} />
               </Link>
@@ -148,7 +149,7 @@ export default function About() {
           <p className="text-xl text-white/80 mb-12 max-w-2xl mx-auto font-medium">
             {t('programs.join')}
           </p>
-          <Link to="/#contact" className="inline-flex items-center gap-2 px-10 py-5 bg-white text-brand-orange font-bold rounded-full text-lg hover:bg-slate-100 hover:scale-105 transition-all shadow-2xl">
+          <Link to={`${prefix}/#contact`} className="inline-flex items-center gap-2 px-10 py-5 bg-white text-brand-orange font-bold rounded-full text-lg hover:bg-slate-100 hover:scale-105 transition-all shadow-2xl">
             {t('programs.contact')}
             <ArrowRight className={`w-5 h-5 ${isHe ? 'rotate-180' : ''}`} />
           </Link>

@@ -155,11 +155,6 @@ export const MakePaymentButton: React.FC<MakePaymentButtonProps> = ({
         targetAdminEmails.map(e => e.toLowerCase().trim()).filter(e => e && e.includes('@'))
       ));
 
-      // Ultimate fallback
-      if (targetAdminEmails.length === 0) {
-        targetAdminEmails.push('teamind50@gmail.com');
-      }
-
       const payload = {
         orderId,
         amount: Number(amount),

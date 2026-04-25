@@ -112,15 +112,6 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSiteConfig(finalConfig);
           // Auto-cache
           try { localStorage.setItem('cached_site_config', JSON.stringify(data)); } catch (e) {}
-          
-          // Admin default language setting
-          if (finalConfig.defaultLanguage && 
-              !localStorage.getItem('user_language_override') && 
-              !window.location.pathname.includes('/teamind-secure-portal')) {
-            if (i18n.language !== finalConfig.defaultLanguage) {
-              i18n.changeLanguage(finalConfig.defaultLanguage);
-            }
-          }
         };
 
         // 1. Initial Load from LocalStorage (Sync)

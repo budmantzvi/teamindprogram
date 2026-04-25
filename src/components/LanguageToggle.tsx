@@ -1,15 +1,23 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Globe } from 'lucide-react';
-import { motion } from 'motion/react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export const LanguageToggle = ({ className = "" }: { className?: string }) => {
   const { i18n } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const toggleLanguage = () => {
-    const newLang = i18n.language === 'he' ? 'en' : 'he';
-    localStorage.setItem('user_language_override', 'true');
-    i18n.changeLanguage(newLang);
+    const isHebrew = location.pathname.startsWith('/he');
+    const pathWithoutLang = isHebrew ? location.pathname.replace('/he', '') || '/' : location.pathname;
+    
+    // Construct new path
+    const newPath = isHebrew 
+      ? (pathWithoutLang === '' ? '/' : pathWithoutLang) 
+      : `/he${pathWithoutLang === '/' ? '' : pathWithoutLang}`;
+      
+    navigate(newPath + location.hash);
   };
 
   const currentLang = i18n.language === 'he' ? 'HE' : 'EN';

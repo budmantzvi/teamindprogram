@@ -30,24 +30,35 @@ async function getRecipients(adminInput: any) {
     if (configSnap.exists()) {
       const configData = configSnap.data();
       
-      // Specifically look for order admins
+      // Hierarchy of resolution:
+      // 1. Specific List
       const orderAdmins = configData.orderNotificationAdmins;
       if (Array.isArray(orderAdmins) && orderAdmins.length > 0) {
         console.log(`[Vercel] Found ${orderAdmins.length} admins in config/site order list`);
         emailSources.push(...orderAdmins);
-      } else {
-        console.log("[Vercel] No orderNotificationAdmins found. Falling back to secondary lists.");
-        // Fallback sequence: Order List -> General List -> All Admins
-        if (Array.isArray(configData.notificationAdmins)) {
-          emailSources.push(...configData.notificationAdmins);
-        }
-        if (Array.isArray(configData.allAdmins)) {
-          emailSources.push(...configData.allAdmins);
+      } 
+      
+      // 2. Try General List if still empty
+      if (emailSources.length === 0) {
+        const generalAdmins = configData.notificationAdmins;
+        if (Array.isArray(generalAdmins) && generalAdmins.length > 0) {
+          console.log("[Vercel] No orderNotificationAdmins. Falling back to notificationAdmins.");
+          emailSources.push(...generalAdmins);
         }
       }
       
-      // Always include contactEmail as master fallback
-      if (configData.contactEmail) {
+      // 3. Try All Admins if still empty
+      if (emailSources.length === 0) {
+        const allAdmins = configData.allAdmins;
+        if (Array.isArray(allAdmins) && allAdmins.length > 0) {
+          console.log("[Vercel] Falling back to allAdmins list.");
+          emailSources.push(...allAdmins);
+        }
+      }
+      
+      // 4. Try Contact Email if still empty
+      if (emailSources.length === 0 && configData.contactEmail) {
+        console.log("[Vercel] Falling back to contactEmail field.");
         emailSources.push(...configData.contactEmail.split(',').map((s: string) => s.trim()));
       }
     }

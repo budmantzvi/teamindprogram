@@ -15,19 +15,22 @@ import { db } from '../lib/firebase';
 import { addDoc, collection, getDocs, serverTimestamp } from 'firebase/firestore';
 import { useSite } from '../lib/SiteContext';
 import { useTranslation } from 'react-i18next';
-import { LanguageToggle } from './LanguageToggle';
 
 export const SEO = ({ title, description, image, url, keywords }: { title?: string, description?: string, image?: string, url?: string, keywords?: string }) => {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
+  const location = useLocation();
   const { t_config } = useSite();
   const siteTitle = t_config('siteTitle') || "TEAMIND | Thinking, Emotions, Attention & Motivation IN Development";
   const siteDescription = t_config('heroSubtitle') || "TEAMIND is a revolutionary character-based program designed to strengthen executive functions in children through music, play, and emotional connection.";
-  const siteUrl = "https://teamindprogram.com/";
+  const siteUrl = "https://teamindprogram.com";
   const siteImage = "https://teamindprogram.com/images/logo.png"; 
 
   const fullTitle = title ? `${title} | TEAMIND` : siteTitle;
   const fullDescription = description || siteDescription;
-  const fullUrl = url ? `${siteUrl}${url.startsWith('/') ? url.slice(1) : url}` : siteUrl;
+  
+  // Use provided url or current location
+  const currentPath = url || location.pathname;
+  const fullUrl = `${siteUrl}${currentPath === '/' ? '' : currentPath}${location.hash}`;
   const fullImage = image || siteImage;
   
   const defaultKeywords = "TEAMIND, teamind, טימיינד, ערכות לילדים, גן, גננת, חינוך, executive functions, emotional intelligence, child development, kindergarten, pedagogical kit, social emotional learning, SEL";
@@ -165,11 +168,6 @@ export const ContactForm = () => {
         .filter(e => e && e.includes('@'))
     ));
 
-    // Ultimate fallback
-    if (targetAdminEmails.length === 0) {
-      targetAdminEmails.push('teamind50@gmail.com');
-    }
-
     console.log("---------------- CONTACT FORM DEBUG ----------------");
     console.log("Current siteConfig:", siteConfig);
     console.log("Selected Admins (Checkboxes):", selectedAdmins);
@@ -285,7 +283,7 @@ export const ContactForm = () => {
         <div className="phone-input-container" dir={i18n.language === 'he' ? 'rtl' : 'ltr'}>
           <PhoneInput
             international
-            defaultCountry="IL"
+            defaultCountry={i18n.language === 'he' ? 'IL' : 'US'}
             value={phoneValue}
             onChange={(val) => {
               setPhoneValue(val);
@@ -386,23 +384,27 @@ export const Navbar = () => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
+  const { i18n } = useTranslation();
+  const isHe = i18n.language === 'he';
+  const prefix = isHe ? '/he' : '';
+
   const navLinks = [
-    { name: t('nav.home'), href: "/" },
-    { name: t('nav.about'), href: "/about" },
-    { name: t('nav.programs'), href: "/#program" },
-    { name: t('nav.founders'), href: "/#founders" },
+    { name: t('nav.home'), href: prefix || "/" },
+    { name: t('nav.about'), href: `${prefix}/about` },
+    { name: t('nav.programs'), href: `${prefix}/#program` },
+    { name: t('nav.founders'), href: `${prefix}/#founders` },
   ];
 
   const programLinks = [
-    { name: t('programs.early'), href: "/early-childhood" },
-    { name: t('programs.elementary'), href: "/elementary" },
-    { name: t('programs.parents'), href: "/parents" },
+    { name: t('programs.early'), href: `${prefix}/early-childhood` },
+    { name: t('programs.elementary'), href: `${prefix}/elementary` },
+    { name: t('programs.parents'), href: `${prefix}/parents` },
   ];
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-white/95 backdrop-blur-md py-1 shadow-sm' : 'bg-transparent py-2'}`}>
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-        <Link to="/" className="flex items-center group">
+        <Link to={prefix || "/"} className="flex items-center group">
           <Logo size="md" />
         </Link>
 
@@ -422,12 +424,11 @@ export const Navbar = () => {
             </Link>
           ))}
           <Link 
-            to="/#contact" 
+            to={`${prefix}/#contact`} 
             className="px-5 py-2 bg-brand-green text-white rounded-full text-xs font-bold hover:bg-brand-green/90 transition-all hover:shadow-xl hover:shadow-brand-green/20 active:scale-95"
           >
             {navBtnText}
           </Link>
-          <LanguageToggle />
         </div>
 
         {/* Mobile Toggle */}
@@ -479,14 +480,13 @@ export const Navbar = () => {
 
               <div className="flex items-center justify-between mt-4">
                 <Link 
-                  to="/#contact" 
+                  to={`${prefix}/#contact`} 
                   className="flex-1 py-4 bg-brand-green text-white rounded-2xl text-center font-bold shadow-lg shadow-brand-green/20"
                   onClick={() => setIsOpen(false)}
                   aria-label="Get Started - Contact Us"
                 >
                   {navBtnText}
                 </Link>
-                <LanguageToggle className="ms-4" />
               </div>
             </div>
           </motion.div>
@@ -498,7 +498,9 @@ export const Navbar = () => {
 
 export const Footer = () => {
   const { siteConfig, t_config } = useSite();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isHe = i18n.language === 'he';
+  const prefix = isHe ? '/he' : '';
 
   const contactEmail = siteConfig?.contactEmail || "support@teamindprogram.com";
   const contactPhone = siteConfig?.contactPhone || "972503422600";
@@ -517,23 +519,23 @@ export const Footer = () => {
           <div>
             <h4 className="text-lg font-serif font-bold mb-6">{t('footer.programs')}</h4>
             <ul className="space-y-4">
-              <li><Link to="/early-childhood" className="text-slate-500 hover:text-teal-600 transition-colors font-medium">{t('programs.early')}</Link></li>
-              <li><Link to="/elementary" className="text-slate-500 hover:text-teal-600 transition-colors font-medium">{t('programs.elementary')}</Link></li>
-              <li><Link to="/parents" className="text-slate-500 hover:text-teal-600 transition-colors font-medium">{t('programs.parents')}</Link></li>
+              <li><Link to={`${prefix}/early-childhood`} className="text-slate-500 hover:text-teal-600 transition-colors font-medium">{t('programs.early')}</Link></li>
+              <li><Link to={`${prefix}/elementary`} className="text-slate-500 hover:text-teal-600 transition-colors font-medium">{t('programs.elementary')}</Link></li>
+              <li><Link to={`${prefix}/parents`} className="text-slate-500 hover:text-teal-600 transition-colors font-medium">{t('programs.parents')}</Link></li>
             </ul>
           </div>
           <div>
             <h4 className="text-lg font-serif font-bold mb-6">{t('footer.company')}</h4>
             <ul className="space-y-4">
-              <li><Link to="/#founders" className="text-slate-500 hover:text-teal-600 transition-colors font-medium">{t('nav.founders')}</Link></li>
-              <li><Link to="/about" className="text-slate-500 hover:text-teal-600 transition-colors font-medium">{t('nav.about')}</Link></li>
+              <li><Link to={`${prefix}/#founders`} className="text-slate-500 hover:text-teal-600 transition-colors font-medium">{t('nav.founders')}</Link></li>
+              <li><Link to={`${prefix}/about`} className="text-slate-500 hover:text-teal-600 transition-colors font-medium">{t('nav.about')}</Link></li>
             </ul>
           </div>
           <div>
             <h4 className="text-lg font-serif font-bold mb-6">{t('footer.legal')}</h4>
             <ul className="space-y-4">
-              <li><Link to="/privacy-policy" className="text-slate-500 hover:text-teal-600 transition-colors font-medium">{t('footer.privacy')}</Link></li>
-              <li><Link to="/terms-of-service" className="text-slate-500 hover:text-teal-600 transition-colors font-medium">{t('footer.terms')}</Link></li>
+              <li><Link to={`${prefix}/privacy-policy`} className="text-slate-500 hover:text-teal-600 transition-colors font-medium">{t('footer.privacy')}</Link></li>
+              <li><Link to={`${prefix}/terms-of-service`} className="text-slate-500 hover:text-teal-600 transition-colors font-medium">{t('footer.terms')}</Link></li>
             </ul>
           </div>
           <div>
@@ -585,8 +587,8 @@ export const Footer = () => {
         <div className="pt-8 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-slate-400 text-sm font-medium">{t('footer.rights')}</p>
           <div className="flex gap-8">
-            <Link to="/privacy-policy" className="text-slate-400 hover:text-slate-600 transition-colors text-sm font-medium">{t('footer.privacy')}</Link>
-            <Link to="/terms-of-service" className="text-slate-400 hover:text-slate-600 transition-colors text-sm font-medium">{t('footer.terms')}</Link>
+            <Link to={`${prefix}/privacy-policy`} className="text-slate-400 hover:text-slate-600 transition-colors text-sm font-medium">{t('footer.privacy')}</Link>
+            <Link to={`${prefix}/terms-of-service`} className="text-slate-400 hover:text-slate-600 transition-colors text-sm font-medium">{t('footer.terms')}</Link>
           </div>
         </div>
       </div>

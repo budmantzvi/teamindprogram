@@ -48,7 +48,8 @@ const getRecipients = async (adminEmails: any, adminEmail: any, type: 'contact' 
     if (configSnap.exists()) {
       const configData = configSnap.data();
       
-      // Select the correct list based on type
+      // Hierarchy of resolution:
+      // 1. Primary List
       const targetList = type === 'order' 
         ? configData.orderNotificationAdmins 
         : configData.notificationAdmins;
@@ -56,19 +57,30 @@ const getRecipients = async (adminEmails: any, adminEmail: any, type: 'contact' 
       if (Array.isArray(targetList) && targetList.length > 0) {
         console.log(`[Server] Found ${targetList.length} defined admins in config/site for ${type}`);
         emailSources.push(...targetList);
-      } else {
-        console.log(`[Server] No defined admins found in config/site for ${type}. Falling back to secondary lists.`);
-        // Fallback sequence: Specific List -> General List -> All Admins
-        if (type === 'order' && Array.isArray(configData.notificationAdmins)) {
-           emailSources.push(...configData.notificationAdmins);
+      } 
+      
+      // 2. Secondary List if empty
+      if (emailSources.length === 0) {
+        const secondaryList = type === 'order' 
+          ? configData.notificationAdmins 
+          : configData.orderNotificationAdmins;
+        if (Array.isArray(secondaryList) && secondaryList.length > 0) {
+          console.log(`[Server] Falling back to secondary list for ${type}`);
+          emailSources.push(...secondaryList);
         }
-        if (Array.isArray(configData.allAdmins)) {
+      }
+      
+      // 3. All Admins if still empty
+      if (emailSources.length === 0) {
+        if (Array.isArray(configData.allAdmins) && configData.allAdmins.length > 0) {
+          console.log(`[Server] Falling back to allAdmins list.`);
           emailSources.push(...configData.allAdmins);
         }
       }
       
-      // Always include contactEmail as a master fallback
-      if (configData.contactEmail) {
+      // 4. Contact Email if still empty
+      if (emailSources.length === 0 && configData.contactEmail) {
+        console.log(`[Server] Falling back to contactEmail.`);
         emailSources.push(...configData.contactEmail.split(',').map((s: string) => s.trim()));
       }
     }

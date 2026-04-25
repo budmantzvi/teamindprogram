@@ -12,8 +12,9 @@ const SuccessPage = () => {
   const { siteConfig } = useSite();
   const { t, i18n } = useTranslation();
   const isHe = i18n.language === 'he';
+  const prefix = isHe ? '/he' : '';
   const hasProcessed = useRef(false);
-  
+
   // Try to get orderId from URL, then localStorage
   const orderIdFromUrl = searchParams.get('orderId') || searchParams.get('transaction_id');
   const orderIdFromStorage = localStorage.getItem('last_order_id');
@@ -60,14 +61,14 @@ const SuccessPage = () => {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link 
-                to="/" 
+                to={prefix || "/"} 
                 className="px-10 py-5 bg-teal-600 text-white font-bold rounded-full text-lg hover:bg-teal-700 transition-all hover:scale-105 shadow-xl shadow-teal-600/20 flex items-center justify-center gap-2"
               >
                 <Home className="w-5 h-5 shrink-0" />
                 {t('success.backHome')}
               </Link>
               <Link 
-                to="/#program" 
+                to={`${prefix}/#program`} 
                 className="px-10 py-5 bg-white border-2 border-slate-200 text-slate-600 font-bold rounded-full text-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
               >
                 <ShoppingBag className="w-5 h-5 shrink-0" />

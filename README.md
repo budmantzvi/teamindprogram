@@ -16,8 +16,7 @@ This project is built with React (Vite) and includes a backend for Vercel deploy
 2. Import the project in Vercel.
 3. Set the following Environment Variables in Vercel:
    - `RESEND_API_KEY`: Your Resend API key.
-   - `STRIPE_SECRET_KEY`: Your Stripe Secret Key (if using Stripe).
-   - `CONTACT_EMAIL`: The email where you want to receive contact form submissions.
+   - `CONTACT_EMAIL`: The email address where you want to receive notifications.
 
 ## Payment Integration (Make.com)
 

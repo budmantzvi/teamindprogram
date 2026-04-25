@@ -1286,31 +1286,6 @@ export default function Admin() {
             <motion.div key="content" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-12 pb-24">
               <div className="flex justify-between items-center bg-white p-6 rounded-[24px] shadow-sm border border-slate-100">
                 <h3 className="text-2xl font-serif font-bold text-slate-900">Content Management</h3>
-                <div className="flex items-center gap-4">
-                  <span className="text-sm font-bold text-slate-500">Website Default Language:</span>
-                  <button
-                    onClick={async () => {
-                      const current = siteConfig?.defaultLanguage || 'he';
-                      const next = current === 'he' ? 'en' : 'he';
-                      const newConfig = { ...siteConfig, defaultLanguage: next };
-                      setSiteConfig(newConfig);
-                      
-                      // MUST await the update before reloading
-                      await handleUpdateConfig(newConfig, true);
-                      
-                      localStorage.setItem('i18nextLng', next);
-                      localStorage.removeItem('user_language_override'); 
-                      window.location.reload(); 
-                    }}
-                    className={`px-6 py-3 rounded-full text-sm font-black uppercase tracking-widest transition-all ${
-                      (siteConfig?.defaultLanguage || 'he') === 'he'
-                        ? 'bg-brand-pink text-white shadow-lg shadow-pink-500/20'
-                        : 'bg-brand-light-blue text-white shadow-lg shadow-teal-500/20'
-                    }`}
-                  >
-                    {(siteConfig?.defaultLanguage || 'he') === 'he' ? 'Hebrew' : 'English'}
-                  </button>
-                </div>
               </div>
 
               {[
@@ -1397,24 +1372,54 @@ export default function Admin() {
                 },
                 {
                   title: "Early Childhood Program",
-                  icon: Settings,
+                  icon: Baby,
                   isProgramPage: true,
                   progKey: 'earlyChildhood',
-                  fields: []
+                  fields: [
+                    { id: 'title', label: 'Page Title', type: 'text' },
+                    { id: 'subtitle', label: 'Subtitle', type: 'textarea' },
+                    { id: 'cardDescription', label: 'Home Card Description', type: 'textarea' },
+                    { id: 'description', label: 'Hero Description', type: 'textarea' },
+                    { id: 'detailsTitle', label: 'Section: How it works Title', type: 'text' },
+                    { id: 'kitTitle', label: 'Section: Kit Title', type: 'text' },
+                    { id: 'kitSubtitle', label: 'Section: Kit Subtitle', type: 'textarea' },
+                    { id: 'investTitle', label: 'Section: Invest Title', type: 'text' },
+                    { id: 'investSubtitle', label: 'Section: Invest Subtitle', type: 'textarea' },
+                  ]
                 },
                 {
                   title: "Elementary Program",
-                  icon: Settings,
+                  icon: GraduationCap,
                   isProgramPage: true,
                   progKey: 'elementary',
-                  fields: []
+                  fields: [
+                    { id: 'title', label: 'Page Title', type: 'text' },
+                    { id: 'subtitle', label: 'Subtitle', type: 'textarea' },
+                    { id: 'cardDescription', label: 'Home Card Description', type: 'textarea' },
+                    { id: 'description', label: 'Hero Description', type: 'textarea' },
+                    { id: 'detailsTitle', label: 'Section: How it works Title', type: 'text' },
+                    { id: 'kitTitle', label: 'Section: Kit Title', type: 'text' },
+                    { id: 'kitSubtitle', label: 'Section: Kit Subtitle', type: 'textarea' },
+                    { id: 'investTitle', label: 'Section: Invest Title', type: 'text' },
+                    { id: 'investSubtitle', label: 'Section: Invest Subtitle', type: 'textarea' },
+                  ]
                 },
                 {
                   title: "Parents Program",
-                  icon: Settings,
+                  icon: Users,
                   isProgramPage: true,
                   progKey: 'parents',
-                  fields: []
+                  fields: [
+                    { id: 'title', label: 'Page Title', type: 'text' },
+                    { id: 'subtitle', label: 'Subtitle', type: 'textarea' },
+                    { id: 'cardDescription', label: 'Home Card Description', type: 'textarea' },
+                    { id: 'description', label: 'Hero Description', type: 'textarea' },
+                    { id: 'detailsTitle', label: 'Section: How it works Title', type: 'text' },
+                    { id: 'kitTitle', label: 'Section: Kit Title', type: 'text' },
+                    { id: 'kitSubtitle', label: 'Section: Kit Subtitle', type: 'textarea' },
+                    { id: 'investTitle', label: 'Section: Invest Title', type: 'text' },
+                    { id: 'investSubtitle', label: 'Section: Invest Subtitle', type: 'textarea' },
+                  ]
                 },
                 {
                   title: "Contact",
@@ -1461,9 +1466,11 @@ export default function Admin() {
                   {openSections.has(section.title) && (
                     <div className="p-10 pt-0 space-y-8">
                       <div className="border-t border-slate-50 pt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {section.fields.map((field) => {
+                        {section.fields.map((field: any) => {
                           const heId = field.id + '_he';
                           const skipHebrew = ['contactEmail', 'contactPhone'].includes(field.id);
+                          const progKey = section.progKey;
+                          const progKeyHe = progKey + '_he';
                           
                           return (
                           <React.Fragment key={field.id}>
@@ -1471,15 +1478,15 @@ export default function Admin() {
                               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">{field.label} {skipHebrew ? '' : '(EN)'}</label>
                               {field.type === 'textarea' ? (
                                 <textarea 
-                                  value={siteConfig?.[field.id] || ''} 
-                                  onChange={(e) => handleTextChange(field.id, e.target.value)}
+                                  value={section.isProgramPage ? (siteConfig?.[progKey]?.[field.id] || '') : (siteConfig?.[field.id] || '')} 
+                                  onChange={(e) => section.isProgramPage ? handleNestedTextChange(progKey, field.id, e.target.value) : handleTextChange(field.id, e.target.value)}
                                   className="w-full px-8 py-4 bg-slate-50 border border-slate-100 rounded-[32px] font-bold h-32 resize-none focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all"
                                 />
                               ) : (
                                 <input 
                                   type="text" 
-                                  value={siteConfig?.[field.id] || ''} 
-                                  onChange={(e) => handleTextChange(field.id, e.target.value)}
+                                  value={section.isProgramPage ? (siteConfig?.[progKey]?.[field.id] || '') : (siteConfig?.[field.id] || '')} 
+                                  onChange={(e) => section.isProgramPage ? handleNestedTextChange(progKey, field.id, e.target.value) : handleTextChange(field.id, e.target.value)}
                                   className="w-full px-8 py-4 bg-slate-50 border border-slate-100 rounded-full font-bold focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all"
                                 />
                               )}
@@ -1490,15 +1497,15 @@ export default function Admin() {
                                 <label className="text-[10px] font-black text-brand-pink uppercase tracking-widest mr-4 inline-block">{field.label} (עברית)</label>
                                 {field.type === 'textarea' ? (
                                   <textarea 
-                                    value={siteConfig?.[heId] || ''} 
-                                    onChange={(e) => handleTextChange(heId, e.target.value)}
+                                    value={section.isProgramPage ? (siteConfig?.[progKeyHe]?.[field.id] || '') : (siteConfig?.[heId] || '')} 
+                                    onChange={(e) => section.isProgramPage ? handleNestedTextChange(progKeyHe, field.id, e.target.value) : handleTextChange(heId, e.target.value)}
                                     className="w-full px-8 py-4 bg-pink-50/30 border border-pink-100 rounded-[32px] font-bold h-32 resize-none focus:ring-4 focus:ring-pink-500/10 focus:border-pink-500 outline-none transition-all"
                                   />
                                 ) : (
                                   <input 
                                     type="text" 
-                                    value={siteConfig?.[heId] || ''} 
-                                    onChange={(e) => handleTextChange(heId, e.target.value)}
+                                    value={section.isProgramPage ? (siteConfig?.[progKeyHe]?.[field.id] || '') : (siteConfig?.[heId] || '')} 
+                                    onChange={(e) => section.isProgramPage ? handleNestedTextChange(progKeyHe, field.id, e.target.value) : handleTextChange(heId, e.target.value)}
                                     className="w-full px-8 py-4 bg-pink-50/30 border border-pink-100 rounded-full font-bold focus:ring-4 focus:ring-pink-500/10 focus:border-pink-500 outline-none transition-all"
                                   />
                                 )}

@@ -28,24 +28,35 @@ async function getRecipients(adminInput: any) {
     if (configSnap.exists()) {
       const configData = configSnap.data();
       
-      // Specifically look for notification admins for contacts
+      // Hierarchy:
+      // 1. Notification List
       const contactAdmins = configData.notificationAdmins;
       if (Array.isArray(contactAdmins) && contactAdmins.length > 0) {
         console.log(`[Vercel] Found ${contactAdmins.length} admins in config/site contact list`);
         emailSources.push(...contactAdmins);
-      } else {
-        console.log("[Vercel] No notificationAdmins found. Falling back to secondary lists.");
-        // Fallback sequence: General List -> Order List -> All Admins
-        if (Array.isArray(configData.orderNotificationAdmins)) {
-           emailSources.push(...configData.orderNotificationAdmins);
-        }
-        if (Array.isArray(configData.allAdmins)) {
-          emailSources.push(...configData.allAdmins);
+      } 
+      
+      // 2. Try Order List if empty
+      if (emailSources.length === 0) {
+        const orderAdmins = configData.orderNotificationAdmins;
+        if (Array.isArray(orderAdmins) && orderAdmins.length > 0) {
+          console.log("[Vercel] No notificationAdmins. Falling back to orderNotificationAdmins.");
+          emailSources.push(...orderAdmins);
         }
       }
       
-      // Always include contactEmail as master fallback
-      if (configData.contactEmail) {
+      // 3. Try All Admins if empty
+      if (emailSources.length === 0) {
+        const allAdmins = configData.allAdmins;
+        if (Array.isArray(allAdmins) && allAdmins.length > 0) {
+          console.log("[Vercel] Falling back to allAdmins list.");
+          emailSources.push(...allAdmins);
+        }
+      }
+      
+      // 4. Try Contact Email if still empty
+      if (emailSources.length === 0 && configData.contactEmail) {
+        console.log("[Vercel] Falling back to contactEmail field.");
         emailSources.push(...configData.contactEmail.split(',').map((s: string) => s.trim()));
       }
     }

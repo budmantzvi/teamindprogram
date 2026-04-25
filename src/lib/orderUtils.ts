@@ -92,11 +92,6 @@ export const processOrderSuccess = async (orderId: string, siteConfig: any) => {
           .filter(e => e && e.includes('@'))
       ));
 
-      // Ultimate fallback
-      if (adminEmails.length === 0) {
-        adminEmails.push('teamind50@gmail.com');
-      }
-
       console.log("Final Admin Recipients for API:", adminEmails);
 
       const response = await fetch('/api/order-notification', {
