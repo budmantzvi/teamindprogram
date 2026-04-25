@@ -2,17 +2,23 @@ import React, { useEffect, useRef } from 'react';
 import { Navbar, Footer } from '../components/Shared';
 import { motion } from 'motion/react';
 import { CheckCircle2, ShoppingBag, ArrowRight, Home } from 'lucide-react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { useSite } from '../lib/SiteContext';
 import { processOrderSuccess } from '../lib/orderUtils';
 import { useTranslation } from 'react-i18next';
 
 const SuccessPage = () => {
-  const [searchParams] = useSearchParams();
   const { siteConfig } = useSite();
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+
   const isHe = i18n.language === 'he';
-  const prefix = isHe ? '/he' : '';
+  // Use location check to ensure we are in the right route context
+  const isOnHebrewPath = location.pathname.startsWith('/he');
+  
+  const prefix = isOnHebrewPath ? '/he' : '';
   const hasProcessed = useRef(false);
 
   // Try to get orderId from URL, then localStorage
@@ -24,18 +30,32 @@ const SuccessPage = () => {
     const processOrder = async () => {
       if (siteConfig && orderId !== 'UNKNOWN' && !hasProcessed.current) {
         hasProcessed.current = true;
+        
+        // We pass the current language context to the processor
         const orderData = await processOrderSuccess(orderId, siteConfig, i18n.language);
         
-        // If order was in a different language, switch language
-        if (orderData && orderData.language && orderData.language !== i18n.language) {
-          console.log(`Switching language from ${i18n.language} to ${orderData.language} based on order data`);
-          i18n.changeLanguage(orderData.language);
+        // If order was in a different language, switch language AND path
+        if (orderData && orderData.language) {
+          const targetIsHebrew = orderData.language === 'he';
+          
+          if (targetIsHebrew && !isOnHebrewPath) {
+            console.log("Redirecting to Hebrew success page based on order data");
+            i18n.changeLanguage('he');
+            navigate(`/he/success?${searchParams.toString()}`, { replace: true });
+          } else if (!targetIsHebrew && isOnHebrewPath) {
+            console.log("Redirecting to English success page based on order data");
+            i18n.changeLanguage('en');
+            navigate(`/success?${searchParams.toString()}`, { replace: true });
+          } else if (orderData.language !== i18n.language) {
+            // Path matches but i18n instance might be lagging
+            i18n.changeLanguage(orderData.language);
+          }
         }
       }
     };
     
     processOrder();
-  }, [orderId, siteConfig, i18n.language, i18n]);
+  }, [orderId, siteConfig, i18n.language, i18n, isOnHebrewPath, navigate, searchParams]);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">

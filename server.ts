@@ -528,13 +528,9 @@ async function startServer() {
 
     // --- DECOUPLED LOGIC: ADMINS ---
     if ((orderNotifications === 'both' || orderNotifications === 'admin') && adminRecipients.length > 0) {
-      const primaryAdmin = adminRecipients[0];
-      const otherAdmins = adminRecipients.slice(1);
-      
       emailTasks.push(resend.emails.send({
         from: `TEAMIND <${senderEmail}>`,
-        to: [primaryAdmin],
-        bcc: otherAdmins.length > 0 ? otherAdmins : undefined,
+        to: adminRecipients,
         replyTo: normalizedCustomerEmail || undefined,
         subject: `New Order #${orderId} - ${customerName}`,
         html: `
