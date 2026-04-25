@@ -327,7 +327,10 @@ async function startServer() {
       street, 
       houseNumber, 
       apartment, 
-      zipCode 
+      zipCode,
+      success_url,
+      cancel_url,
+      language
     } = req.body;
 
     // 2. Resolve field values with fallback
@@ -347,6 +350,11 @@ async function startServer() {
       fullName: resolvedName,
       price: resolvedAmount,
       phone: resolvedPhone,
+      
+      // Redirects
+      success_url: success_url || "",
+      cancel_url: cancel_url || "",
+      language: language || "he",
       
       // Default keys
       orderId: String(orderId || '').trim(),
