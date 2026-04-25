@@ -2,22 +2,37 @@ import { db } from './firebase';
 import { collection, query, where, getDocs, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 
 export const processOrderSuccess = async (orderId: string, siteConfig: any, language: string = 'he') => {
+  let orderData: any = null;
   if (!orderId || orderId === 'UNKNOWN') {
     console.warn("No Order ID found for processing.");
     return;
   }
 
   const sessionKey = `order_processed_${orderId}`;
-  if (sessionStorage.getItem(sessionKey)) {
-    console.log("Order already processed in this session.");
-    return;
+  const alreadyProcessed = sessionStorage.getItem(sessionKey);
+  
+  if (alreadyProcessed === 'true') {
+    console.log("Order already fully processed in this session.");
+    // Try to get cached data for language detection if needed
+    const cachedOrder = localStorage.getItem(`order_data_${orderId}`);
+    if (cachedOrder) {
+      try { return JSON.parse(cachedOrder); } catch (e) {}
+    }
+    // Try to fetch from Firestore if not in cache (less common since success page processes it first)
+    try {
+      const q = query(collection(db, 'orders'), where('orderId', '==', orderId));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        return querySnapshot.docs[0].data();
+      }
+    } catch (e) {}
+    return null;
   }
 
   try {
     console.log("Processing order success for:", orderId);
     
     // 1. Get cached order details from localStorage (Fallback if Firestore is down)
-    let orderData: any = null;
     const cachedOrder = localStorage.getItem(`order_data_${orderId}`);
     if (cachedOrder) {
       try {
@@ -107,7 +122,7 @@ export const processOrderSuccess = async (orderId: string, siteConfig: any, lang
           shippingAddress: orderData.shippingAddress,
           adminEmails: adminEmails,
           orderNotifications: siteConfig?.orderNotifications || 'both',
-          language: language,
+          language: orderData.language || language,
           source: 'client'
         })
       });
@@ -135,4 +150,6 @@ export const processOrderSuccess = async (orderId: string, siteConfig: any, lang
   } catch (err) {
     console.error("Error in processOrderSuccess:", err);
   }
+  
+  return orderData;
 };

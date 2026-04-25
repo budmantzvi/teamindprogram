@@ -21,11 +21,21 @@ const SuccessPage = () => {
   const orderId = orderIdFromUrl || orderIdFromStorage || 'UNKNOWN';
 
   useEffect(() => {
-    if (siteConfig && orderId !== 'UNKNOWN' && !hasProcessed.current) {
-      hasProcessed.current = true;
-      processOrderSuccess(orderId, siteConfig, i18n.language);
-    }
-  }, [orderId, siteConfig, i18n.language]);
+    const processOrder = async () => {
+      if (siteConfig && orderId !== 'UNKNOWN' && !hasProcessed.current) {
+        hasProcessed.current = true;
+        const orderData = await processOrderSuccess(orderId, siteConfig, i18n.language);
+        
+        // If order was in a different language, switch language
+        if (orderData && orderData.language && orderData.language !== i18n.language) {
+          console.log(`Switching language from ${i18n.language} to ${orderData.language} based on order data`);
+          i18n.changeLanguage(orderData.language);
+        }
+      }
+    };
+    
+    processOrder();
+  }, [orderId, siteConfig, i18n.language, i18n]);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">

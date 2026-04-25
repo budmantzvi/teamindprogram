@@ -105,6 +105,7 @@ export const MakePaymentButton: React.FC<MakePaymentButtonProps> = ({
           program: productName,
           amount: Number(amount),
           status: 'pending', // Will be updated to 'paid' on success page
+          language: i18n.language,
           createdAt: serverTimestamp()
         });
       } catch (dbErr: any) {
