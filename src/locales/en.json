@@ -184,7 +184,7 @@
     "securePayment": "Secure payment processed via our partner. You will be redirected to complete the transaction.",
     "israelOnly": "Note: Delivery is currently available in Israel only.",
     "egDenver": "e.g. Denver",
-    "egPine Drive": "e.g. Pine Drive",
+    "egPineDrive": "e.g. Pine Drive",
     "nameRequired": "Full name is required",
     "emailRequired": "Email is required",
     "invalidEmail": "Invalid email format",
