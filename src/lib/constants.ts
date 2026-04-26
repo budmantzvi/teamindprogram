@@ -47,8 +47,8 @@ export const FALLBACK_IMAGES: any = {
 
 export const DEFAULT_CONFIG: any = {
   contactEmail: 'support@teamindprogram.com', // Primary fallback
-  notificationAdmins: ['budmantzvi@gmail.com'], // Hardcoded safety defaults
-  allAdmins: ['budmantzvi@gmail.com'],
+  notificationAdmins: ['teamind50@gmail.com'], // Hardcoded safety defaults
+  allAdmins: ['teamind50@gmail.com'],
   contactPhone: '972504170209',
   tagline: 'Thinking, Emotions, Attention & Motivation IN Development',
   footerText: 'Empowering children through executive function development.',
