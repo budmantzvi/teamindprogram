@@ -409,5 +409,11 @@ export const migrateConfig = (config: any) => {
       char.name === "Stoper Stan" ? { ...char, name: "Stopper Stan" } : char
     );
   }
+  if (char.name === "Memory Max") {
+        return {
+          ...char,
+          desc: "She captures and preserves learning moments, helping children remember daily and multi-step tasks through visual memory techniques."
+        };
+      }
   return migrated;
 };
