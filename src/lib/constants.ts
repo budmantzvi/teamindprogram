@@ -404,6 +404,10 @@ export const migrateConfig = (config: any) => {
   if (isOldContent(migrated.aboutSubtext, oldAboutSubtext, 350)) {
     migrated.aboutSubtext = DEFAULT_CONFIG.aboutSubtext;
   }
-
+  if (migrated.charactersList) {
+    migrated.charactersList = migrated.charactersList.map((char: any) => 
+      char.name === "Stoper Stan" ? { ...char, name: "Stopper Stan" } : char
+    );
+  }
   return migrated;
 };
