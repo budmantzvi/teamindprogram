@@ -85,7 +85,13 @@ function LanguageHandler() {
 
 function AppContent() {
   const location = useLocation();
-  const isAdminPage = location.pathname.startsWith('/teamind-secure-portal-2024-v2');
+  const isAdminPage = location.pathname.toLowerCase().startsWith('/teamind-secure-portal-2024-v2');
+
+  useEffect(() => {
+    if (isAdminPage) {
+      console.log("[App] Admin portal detected:", location.pathname);
+    }
+  }, [isAdminPage, location.pathname]);
 
   return (
     <>
@@ -97,7 +103,7 @@ function AppContent() {
       <main>
         <Routes>
           {/* Admin Route - Handled first and separately to avoid interference */}
-          <Route path="/teamind-secure-portal-2024-v2" element={<Admin />} />
+          <Route path="/teamind-secure-portal-2024-v2/*" element={<Admin />} />
 
           {/* Hebrew Routes */}
           <Route path="/he">

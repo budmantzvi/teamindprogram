@@ -673,14 +673,38 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
+    if (fs.existsSync(distPath)) {
+      console.log(`[Server] Serving static files from: ${distPath}`);
+      app.use(express.static(distPath));
+    } else {
+      console.error(`[Server] WARNING: dist directory NOT FOUND at ${distPath}. Build the app first!`);
+    }
   }
+
+  // CATCH-ALL for SPA fallback (MUST BE LAST)
+  app.get('*', (req, res, next) => {
+    // Skip API routes so they don't get caught here if they reach this point (though they shouldn't)
+    if (req.path.startsWith('/api/')) return next();
+    
+    const distPath = path.join(process.cwd(), 'dist');
+    const indexPath = path.join(distPath, 'index.html');
+    
+    if (process.env.NODE_ENV === "production") {
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        res.status(404).send("Application build not found (index.html missing). Please run 'npm run build'.");
+      }
+    } else {
+      // In dev mode, we let Vite handle it, but we can have a fallback here just in case
+      next();
+    }
+  });
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`- Admin Portal: http://localhost:${PORT}/teamind-secure-portal-2024-v2`);
+    console.log(`- Hebrew Site: http://localhost:${PORT}/he`);
   });
 }
 
