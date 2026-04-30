@@ -1,28 +1,78 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <!-- English Routes -->
   <url>
     <loc>https://teamindprogram.com/</loc>
-    <lastmod>2024-05-22</lastmod>
+    <xhtml:link rel="alternate" hreflang="he" href="https://teamindprogram.com/he"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://teamindprogram.com/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://teamindprogram.com/"/>
+    <lastmod>2026-04-25</lastmod>
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://teamindprogram.com/about</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://teamindprogram.com/he/about"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://teamindprogram.com/about"/>
+    <lastmod>2026-04-25</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://teamindprogram.com/early-childhood</loc>
-    <lastmod>2024-05-22</lastmod>
+    <xhtml:link rel="alternate" hreflang="he" href="https://teamindprogram.com/he/early-childhood"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://teamindprogram.com/early-childhood"/>
+    <lastmod>2026-04-25</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://teamindprogram.com/elementary</loc>
-    <lastmod>2024-05-22</lastmod>
+    <xhtml:link rel="alternate" hreflang="he" href="https://teamindprogram.com/he/elementary"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://teamindprogram.com/elementary"/>
+    <lastmod>2026-04-25</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://teamindprogram.com/parents</loc>
-    <lastmod>2024-05-22</lastmod>
+    <xhtml:link rel="alternate" hreflang="he" href="https://teamindprogram.com/he/parents"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://teamindprogram.com/parents"/>
+    <lastmod>2026-04-25</lastmod>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Hebrew Routes -->
+  <url>
+    <loc>https://teamindprogram.com/he</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://teamindprogram.com/"/>
+    <xhtml:link rel="alternate" hreflang="he" href="https://teamindprogram.com/he"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://teamindprogram.com/"/>
+    <lastmod>2026-04-25</lastmod>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://teamindprogram.com/he/about</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://teamindprogram.com/about"/>
+    <xhtml:link rel="alternate" hreflang="he" href="https://teamindprogram.com/he/about"/>
+    <lastmod>2026-04-25</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://teamindprogram.com/checkout</loc>
-    <lastmod>2024-05-22</lastmod>
-    <priority>0.5</priority>
+    <loc>https://teamindprogram.com/he/early-childhood</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://teamindprogram.com/early-childhood"/>
+    <xhtml:link rel="alternate" hreflang="he" href="https://teamindprogram.com/he/early-childhood"/>
+    <lastmod>2026-04-25</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://teamindprogram.com/he/elementary</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://teamindprogram.com/elementary"/>
+    <xhtml:link rel="alternate" hreflang="he" href="https://teamindprogram.com/he/elementary"/>
+    <lastmod>2026-04-25</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://teamindprogram.com/he/parents</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://teamindprogram.com/parents"/>
+    <xhtml:link rel="alternate" hreflang="he" href="https://teamindprogram.com/he/parents"/>
+    <lastmod>2026-04-25</lastmod>
+    <priority>0.8</priority>
   </url>
 </urlset>

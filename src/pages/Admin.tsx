@@ -55,7 +55,8 @@ import {
   Baby,
   FileUp,
   ShieldCheck,
-  RefreshCw
+  RefreshCw,
+  Gavel
 } from 'lucide-react';
 import { DEFAULT_CONFIG, deepMergeConfig, migrateConfig } from '../lib/constants';
 import toast, { Toaster } from 'react-hot-toast';
@@ -547,6 +548,35 @@ export default function Admin() {
     }
   };
 
+  const handleDeleteAllContacts = async () => {
+    if (contacts.length === 0) return;
+    if (!window.confirm(`CRITICAL: Are you sure you want to delete ALL ${contacts.length} contact messages? This cannot be undone.`)) return;
+    
+    const loadingToast = toast.loading('Deleting all contacts...');
+    try {
+      // Use batch for better efficiency if needed, but for simplicity here we use Promise.all
+      const promises = contacts.map(c => deleteDoc(doc(db, 'contacts', c.id)));
+      await Promise.all(promises);
+      toast.success('Total cleanup complete', { id: loadingToast });
+    } catch (err: any) {
+      toast.error('Failed to delete all: ' + err.message, { id: loadingToast });
+    }
+  };
+
+  const handleDeleteAllOrders = async () => {
+    if (orders.length === 0) return;
+    if (!window.confirm(`CRITICAL: Are you sure you want to delete ALL ${orders.length} orders? This cannot be undone.`)) return;
+    
+    const loadingToast = toast.loading('Deleting all orders...');
+    try {
+      const promises = orders.map(o => deleteDoc(doc(db, 'orders', o.id)));
+      await Promise.all(promises);
+      toast.success('Database cleared', { id: loadingToast });
+    } catch (err: any) {
+      toast.error('Failed to delete all: ' + err.message, { id: loadingToast });
+    }
+  };
+
   const formatDate = (dateVal: any) => {
     if (!dateVal) return 'N/A';
     let date: Date;
@@ -590,6 +620,10 @@ export default function Admin() {
 
       // Ensure we don't save the images object back to the main config
       const { images, ...configToSave } = newConfig;
+      
+      // Auto-update timestamp
+      configToSave.lastUpdated = new Date().toISOString();
+      
       const finalConfig = sanitize(configToSave);
       
       await setDoc(doc(db, 'config', 'site'), finalConfig);
@@ -637,53 +671,84 @@ export default function Admin() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64String = reader.result as string;
-        let loadingToast;
+      const loadingToast = toast.loading('Uploading to secure cloud storage...');
+      
+      const uploadFile = async () => {
         try {
-          loadingToast = toast.loading('Compressing and uploading...');
-          const compressed = await compressImage(base64String);
+          // Use our server-side proxy for security (hides the Vercel token)
+          const response = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': file.type,
+            },
+            body: file,
+          });
+
+          if (!response.ok) throw new Error('Upload failed');
+
+          const blob = await response.json();
+          const url = blob.url;
           
-          // Save to separate collection to avoid 1MB document limit
+          // Save the secure link to Firestore
           await setDoc(doc(db, 'siteImages', field), { 
-            url: compressed,
+            url: url,
             updatedAt: new Date().toISOString()
           });
+
+          // Also update a global timestamp in the config to trigger a refresh for users
+          try {
+            await updateDoc(doc(db, 'config', 'site'), {
+              imagesLastUpdated: new Date().toISOString()
+            });
+          } catch (e) {
+            console.warn("Failed to update global image timestamp:", e);
+          }
           
-          toast.success('Image updated successfully', { id: loadingToast });
+          toast.success('Image uploaded successfully', { id: loadingToast });
         } catch (err: any) {
           console.error("Error uploading image:", err);
-          toast.error('Failed to upload image', { id: loadingToast });
+          toast.error('Failed to upload: ' + err.message, { id: loadingToast });
         }
       };
-      reader.readAsDataURL(file);
+
+      uploadFile();
     }
   };
 
   const handleTestimonialImageUpload = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64String = reader.result as string;
-        let loadingToast;
+      const loadingToast = toast.loading('Uploading profile picture...');
+      
+      const uploadFile = async () => {
         try {
-          loadingToast = toast.loading('Uploading profile picture...');
-          const compressed = await compressImage(base64String, 400, 400); 
+          // Use our server-side proxy
+          const response = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': file.type,
+            },
+            body: file,
+          });
+
+          if (!response.ok) throw new Error('Upload failed');
+
+          const blob = await response.json();
+          const url = blob.url;
           
           const newList = [...siteConfig.testimonials];
-          newList[index].image = compressed;
+          newList[index].image = url;
           const newConfig = { ...siteConfig, testimonials: newList };
           setSiteConfig(newConfig);
           handleUpdateConfig(newConfig, true);
           
           toast.success('Profile picture updated successfully', { id: loadingToast });
         } catch (err: any) {
-          toast.error('Failed to upload image', { id: loadingToast });
+          toast.error('Failed to upload image: ' + err.message, { id: loadingToast });
         }
       };
-      reader.readAsDataURL(file);
+
+      uploadFile();
     }
   };
 
@@ -763,7 +828,7 @@ export default function Admin() {
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6 w-full">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md bg-white rounded-[48px] shadow-2xl p-12 border border-slate-100">
           <div className="text-center mb-10">
-            <h1 className="text-3xl font-serif font-bold mb-2">{isRegistering ? 'Admin Registration' : 'Admin Login'}</h1>
+            <h1 className="text-3xl font-sans font-bold mb-2">{isRegistering ? 'Admin Registration' : 'Admin Login'}</h1>
             <p className="text-slate-500 font-medium">{isRegistering ? 'Create your authorized account' : 'Access your dashboard'}</p>
           </div>
           
@@ -845,7 +910,7 @@ export default function Admin() {
           <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center text-rose-600 mx-auto mb-6">
             <ShieldAlert className="w-10 h-10" />
           </div>
-          <h2 className="text-2xl font-serif font-bold mb-4">Access Denied</h2>
+          <h2 className="text-2xl font-sans font-bold mb-4">Access Denied</h2>
           <div className="space-y-4 mb-8">
             <p className="text-slate-500 font-medium leading-relaxed">
               The email <span className="text-slate-900 font-bold">{user.email}</span> is not authorized to access this dashboard.
@@ -888,7 +953,7 @@ export default function Admin() {
           <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center text-amber-600 mx-auto mb-6">
             <Mail className="w-10 h-10" />
           </div>
-          <h2 className="text-2xl font-serif font-bold mb-4">Email Verification Required</h2>
+          <h2 className="text-2xl font-sans font-bold mb-4">Email Verification Required</h2>
           <p className="text-slate-500 font-medium mb-8 leading-relaxed">
             We've sent a verification link to <span className="text-slate-900 font-bold">{user.email}</span>. 
             Please check your inbox and confirm your address to continue.
@@ -934,7 +999,7 @@ export default function Admin() {
         )}
         <div className="mb-8 md:mb-12 flex justify-between items-start">
           <div>
-            <h2 className="text-xl md:text-2xl font-serif font-bold text-brand-green">Admin Panel</h2>
+            <h2 className="text-xl md:text-2xl font-sans font-bold text-brand-green">Admin Panel</h2>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">TEAMIND Dashboard</p>
             <div className="mt-4 flex items-center gap-2">
               <div className={`w-3 h-3 rounded-full ${dataError ? 'bg-rose-500 animate-pulse shadow-[0_0_10px_rgba(244,63,94,0.5)]' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]'}`} />
@@ -955,6 +1020,7 @@ export default function Admin() {
             { id: 'contacts', label: 'Contacts', icon: MessageSquare },
             { id: 'orders', label: 'Orders', icon: ShoppingBag },
             { id: 'content', label: 'Content', icon: Settings },
+            { id: 'legal', label: 'Legal', icon: Gavel },
             { id: 'images', label: 'Images', icon: ImageIcon },
             { id: 'admins', label: 'Admins', icon: Users },
           ].map((tab) => (
@@ -978,7 +1044,17 @@ export default function Admin() {
           {activeTab === 'contacts' && (
             <motion.div key="contacts" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
               <div className="flex justify-between items-center">
-                <h3 className="text-2xl font-serif font-bold text-slate-900">Contact Inquiries</h3>
+                <div className="flex items-center gap-4">
+                  <h3 className="text-2xl font-sans font-bold text-slate-900">Contact Inquiries</h3>
+                  {contacts.length > 0 && (
+                    <button 
+                      onClick={handleDeleteAllContacts}
+                      className="px-3 py-1 bg-rose-50 text-rose-500 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-rose-100 transition-colors flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3 h-3" /> Delete All
+                    </button>
+                  )}
+                </div>
                 <span className="px-4 py-1 bg-brand-green/10 text-brand-green rounded-full text-xs font-black uppercase tracking-widest">
                   {dataLoading.contacts ? 'Loading...' : `${contacts.length} Total`}
                 </span>
@@ -1082,7 +1158,7 @@ export default function Admin() {
                       <div className="space-y-8">
                         <div>
                           <p className="text-xs font-black text-teal-600 uppercase tracking-widest mb-2">Contact Details</p>
-                          <h2 className="text-3xl font-serif font-bold text-slate-900">{selectedContact.name}</h2>
+                          <h2 className="text-3xl font-sans font-bold text-slate-900">{selectedContact.name}</h2>
                           <p className="text-slate-500">{formatDate(selectedContact.createdAt)}</p>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -1138,10 +1214,18 @@ export default function Admin() {
             <motion.div key="orders" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="flex items-center gap-4">
-                  <h3 className="text-2xl font-serif font-bold text-slate-900">Program Orders</h3>
+                  <h3 className="text-2xl font-sans font-bold text-slate-900">Program Orders</h3>
                   <span className="px-4 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs font-black uppercase tracking-widest">
                     {dataLoading.orders ? 'Loading...' : `${orders.filter(o => o.status === 'paid' || o.status === 'completed').length} Total`}
                   </span>
+                  {orders.length > 0 && (
+                    <button 
+                      onClick={handleDeleteAllOrders}
+                      className="px-3 py-1 bg-rose-50 text-rose-500 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-rose-100 transition-colors flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3 h-3" /> Delete All
+                    </button>
+                  )}
                 </div>
                 <div className="relative w-full md:w-96">
                   <input 
@@ -1282,10 +1366,102 @@ export default function Admin() {
             </motion.div>
           )}
 
+          {activeTab === 'legal' && (
+            <motion.div key="legal" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+              <div className="flex justify-between items-center bg-white p-6 rounded-[32px] shadow-sm border border-slate-100">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
+                    <Gavel className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-sans font-bold text-slate-900">Legal Documents</h3>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Privacy Policy & Terms</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => handleUpdateConfig(siteConfig, false)}
+                  className="px-8 py-3 bg-brand-green text-white rounded-full font-black flex items-center gap-2 hover:bg-brand-green/90 transition-all shadow-xl shadow-brand-green/20 active:scale-95 uppercase tracking-widest text-xs"
+                >
+                  <Save className="w-4 h-4" /> Save Legal Content
+                </button>
+              </div>
+
+              <div className="grid gap-8 pb-32">
+                {/* Privacy Policy English */}
+                <div className="bg-white p-10 rounded-[48px] border border-slate-100 shadow-sm space-y-6">
+                  <div className="flex justify-between items-center flex-wrap gap-4">
+                    <div className="flex items-center gap-3 text-brand-green">
+                      <ShieldCheck className="w-6 h-6" />
+                      <h4 className="text-xl font-sans font-bold text-slate-900">Privacy Policy (English)</h4>
+                    </div>
+                    <span className="px-3 py-1 bg-slate-50 text-slate-400 rounded-full text-[10px] font-black uppercase tracking-widest">HTML Format</span>
+                  </div>
+                  <textarea 
+                    value={siteConfig.privacyPolicyHtml || ''}
+                    onChange={(e) => setSiteConfig({ ...siteConfig, privacyPolicyHtml: e.target.value })}
+                    className="w-full h-[500px] px-6 py-6 rounded-3xl border border-slate-100 focus:ring-4 focus:ring-brand-green/10 outline-none font-mono text-sm leading-relaxed bg-slate-50/50"
+                    placeholder="Enter Privacy Policy HTML here..."
+                  />
+                </div>
+
+                {/* Privacy Policy Hebrew */}
+                <div className="bg-white p-10 rounded-[48px] border border-slate-100 shadow-sm space-y-6" dir="rtl">
+                  <div className="flex justify-between items-center flex-wrap gap-4">
+                    <div className="flex items-center gap-3 text-brand-green">
+                      <ShieldCheck className="w-6 h-6" />
+                      <h4 className="text-xl font-sans font-bold text-slate-900">מדיניות פרטיות (עברית)</h4>
+                    </div>
+                    <span className="px-3 py-1 bg-slate-50 text-slate-400 rounded-full text-[10px] font-black uppercase tracking-widest">פורמט HTML</span>
+                  </div>
+                  <textarea 
+                    value={siteConfig.privacyPolicyHtml_he || ''}
+                    onChange={(e) => setSiteConfig({ ...siteConfig, privacyPolicyHtml_he: e.target.value })}
+                    className="w-full h-[500px] px-6 py-6 rounded-3xl border border-slate-100 focus:ring-4 focus:ring-brand-green/10 outline-none font-sans text-sm leading-relaxed bg-slate-50/50"
+                    placeholder="הזן כאן את קוד ה-HTML של מדיניות הפרטיות..."
+                  />
+                </div>
+
+                {/* Terms of Service English */}
+                <div className="bg-white p-10 rounded-[48px] border border-slate-100 shadow-sm space-y-6">
+                  <div className="flex justify-between items-center flex-wrap gap-4">
+                    <div className="flex items-center gap-3 text-slate-900">
+                      <Gavel className="w-6 h-6" />
+                      <h4 className="text-xl font-sans font-bold text-slate-900">Terms of Service (English)</h4>
+                    </div>
+                    <span className="px-3 py-1 bg-slate-50 text-slate-400 rounded-full text-[10px] font-black uppercase tracking-widest">HTML Format</span>
+                  </div>
+                  <textarea 
+                    value={siteConfig.termsOfServiceHtml || ''}
+                    onChange={(e) => setSiteConfig({ ...siteConfig, termsOfServiceHtml: e.target.value })}
+                    className="w-full h-[500px] px-6 py-6 rounded-3xl border border-slate-100 focus:ring-4 focus:ring-brand-green/10 outline-none font-mono text-sm leading-relaxed bg-slate-50/50"
+                    placeholder="Enter Terms of Service HTML here..."
+                  />
+                </div>
+
+                {/* Terms of Service Hebrew */}
+                <div className="bg-white p-10 rounded-[48px] border border-slate-100 shadow-sm space-y-6" dir="rtl">
+                  <div className="flex justify-between items-center flex-wrap gap-4">
+                    <div className="flex items-center gap-3 text-slate-900">
+                      <Gavel className="w-6 h-6" />
+                      <h4 className="text-xl font-sans font-bold text-slate-900">תנאי שימוש (עברית)</h4>
+                    </div>
+                    <span className="px-3 py-1 bg-slate-50 text-slate-400 rounded-full text-[10px] font-black uppercase tracking-widest">פורמט HTML</span>
+                  </div>
+                  <textarea 
+                    value={siteConfig.termsOfServiceHtml_he || ''}
+                    onChange={(e) => setSiteConfig({ ...siteConfig, termsOfServiceHtml_he: e.target.value })}
+                    className="w-full h-[500px] px-6 py-6 rounded-3xl border border-slate-100 focus:ring-4 focus:ring-brand-green/10 outline-none font-sans text-sm leading-relaxed bg-slate-50/50"
+                    placeholder="הזן כאן את קוד ה-HTML של תנאי השימוש..."
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {activeTab === 'content' && (
             <motion.div key="content" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-12 pb-24">
               <div className="flex justify-between items-center bg-white p-6 rounded-[24px] shadow-sm border border-slate-100">
-                <h3 className="text-2xl font-serif font-bold text-slate-900">Content Management</h3>
+                <h3 className="text-2xl font-sans font-bold text-slate-900">Content Management</h3>
               </div>
 
               {[
@@ -1439,7 +1615,7 @@ export default function Admin() {
                       <div className="w-12 h-12 bg-teal-50 rounded-2xl flex items-center justify-center text-teal-600">
                         <section.icon className="w-6 h-6" />
                       </div>
-                      <h4 className="text-xl font-serif font-bold text-slate-900">{section.title}</h4>
+                      <h4 className="text-xl font-sans font-bold text-slate-900">{section.title}</h4>
                   </div>
                   <div className="flex items-center gap-3">
                     {section.title !== "Global Settings" && (
@@ -2168,7 +2344,7 @@ export default function Admin() {
           {activeTab === 'images' && (
             <motion.div key="images" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-12 pb-24">
               <div className="flex justify-between items-center">
-                <h3 className="text-2xl font-serif font-bold text-slate-900">Image Management</h3>
+                <h3 className="text-2xl font-sans font-bold text-slate-900">Image Management</h3>
                 <p className="text-xs font-bold text-slate-400 bg-white px-4 py-2 rounded-full border border-slate-100">Sole source of truth: Firestore</p>
               </div>
 
@@ -2219,7 +2395,7 @@ export default function Admin() {
                 }
               ].map((section) => (
                 <div key={section.title} className="space-y-6">
-                  <h4 className="text-lg font-serif font-bold text-teal-600 border-b border-teal-100 pb-2">{section.title}</h4>
+                  <h4 className="text-lg font-sans font-bold text-teal-600 border-b border-teal-100 pb-2">{section.title}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {section.images.map((img) => (
                       <div key={img.id} className="bg-white p-6 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-md transition-all">
@@ -2285,7 +2461,7 @@ export default function Admin() {
 
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h3 className="text-xl md:text-2xl font-serif font-bold text-slate-900">Admin Management</h3>
+              <h3 className="text-xl md:text-2xl font-sans font-bold text-slate-900">Admin Management</h3>
               <p className="text-slate-500 font-medium text-xs md:text-sm">Manage who can access this dashboard</p>
             </div>
             <form onSubmit={handleAddAdmin} className="w-full sm:w-auto flex flex-col sm:flex-row gap-2">

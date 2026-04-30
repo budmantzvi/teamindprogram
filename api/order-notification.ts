@@ -227,54 +227,69 @@ export default async function handler(req: any, res: any) {
     const senderEmail = process.env.RESEND_SENDER_EMAIL || 'support@teamindprogram.com';
     const emailTasks: Promise<any>[] = [];
 
-    // 1. Send ONE Email to all Admins (using BCC for privacy and efficiency)
+    const adminHtml = `
+      <div style="font-family: sans-serif; padding: 30px; border: 1px solid #eee; border-radius: 20px; max-width: 600px; margin: 0 auto; direction: ltr;">
+        <h2 style="color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 10px; margin-bottom: 20px;">New Order Received!</h2>
+        <div style="margin: 20px 0;">
+          <p style="font-size: 16px;"><strong>Date:</strong> ${orderDate}</p>
+          <p style="font-size: 16px;"><strong>Order ID:</strong> <span dir="ltr">#${orderId}</span></p>
+          <p><strong>Program:</strong> ${program}</p>
+          <p><strong>Amount:</strong> ₪${amount}</p>
+        </div>
+        <div style="background: #f9fafb; padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+          <h3 style="margin-top: 0; color: #334155;">Customer Details</h3>
+          <p><strong>Name:</strong> ${customerName}</p>
+          <p><strong>Email:</strong> ${customerEmail}</p>
+          <p><strong>Phone:</strong> ${phone}</p>
+        </div>
+        ${shippingAddress ? `
+        <div style="background: #f0fdfa; padding: 20px; border-radius: 15px; border: 1px solid #ccfbf1;">
+          <h3 style="margin-top: 0; color: #0f766e;">Shipping Address</h3>
+          <p style="margin-bottom: 0;">
+            ${shippingAddress.street || ''} ${shippingAddress.houseNumber || ''}<br/>
+            ${shippingAddress.apartment ? `Apartment ${shippingAddress.apartment}<br/>` : ''}
+            ${shippingAddress.city || ''}<br/>
+            ${shippingAddress.zipCode ? `ZIP: ${shippingAddress.zipCode}` : ''}
+          </p>
+        </div>
+        ` : ''}
+        <div style="margin-top: 30px; text-align: center;">
+          <a href="https://teamindprogram.com/teamind-secure-portal-2024-v2" 
+             style="background: #0d9488; color: white; padding: 12px 25px; text-decoration: none; border-radius: 50px; font-weight: bold;">
+             View in Admin Panel
+          </a>
+        </div>
+      </div>
+    `;
+
+    const getFriendlyName = (email: string) => {
+      const low = email.toLowerCase();
+      if (low.includes('budmantzvi')) return 'Tzvi (Admin)';
+      if (low.includes('zbibdmn')) return 'Zvi (Admin)';
+      return 'Admin';
+    };
+
+    // 1. Send INDIVIDUAL Emails to all Admins (Avoid BCC to ensure correct "To" header)
     if ((orderNotifications === 'both' || orderNotifications === 'admin') && adminEmails.length > 0) {
-      const primaryAdmin = adminEmails[0];
-      const otherAdmins = adminEmails.slice(1);
-      
-      emailTasks.push(
-        resend.emails.send({
-          from: `TEAMIND <${senderEmail}>`,
-          to: [primaryAdmin],
-          bcc: otherAdmins.length > 0 ? otherAdmins : undefined,
-          replyTo: normalizedCustomerEmail || undefined,
-          subject: `New Order #${orderId} - ${customerName}`,
-          html: `
-            <div style="font-family: sans-serif; padding: 30px; border: 1px solid #eee; border-radius: 20px; max-width: 600px; margin: 0 auto; direction: ltr;">
-              <h2 style="color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 10px; margin-bottom: 20px;">New Order Received!</h2>
-              <div style="margin: 20px 0;">
-                <p style="font-size: 16px;"><strong>Date:</strong> ${orderDate}</p>
-                <p style="font-size: 16px;"><strong>Order ID:</strong> <span dir="ltr">#${orderId}</span></p>
-                <p><strong>Program:</strong> ${program}</p>
-                <p><strong>Amount:</strong> ₪${amount}</p>
+      for (const recipient of adminEmails) {
+        const friendlyName = getFriendlyName(recipient);
+        const toField = `${friendlyName} <${recipient}>`;
+        
+        emailTasks.push(
+          resend.emails.send({
+            from: `TEAMIND <${senderEmail}>`,
+            to: [toField],
+            replyTo: normalizedCustomerEmail || undefined,
+            subject: `NEW ORDER #${orderId} - ${customerName}`,
+            html: `
+              ${adminHtml}
+              <div style="margin-top: 30px; font-size: 11px; color: #94a3b8; text-align: center; border-top: 1px solid #f1f5f9; padding-top: 10px;">
+                Notification sent specifically to: ${recipient}
               </div>
-              <div style="background: #f9fafb; padding: 20px; border-radius: 15px; margin-bottom: 20px;">
-                <h3 style="margin-top: 0; color: #334155;">Customer Details</h3>
-                <p><strong>Name:</strong> ${customerName}</p>
-                <p><strong>Email:</strong> ${customerEmail}</p>
-                <p><strong>Phone:</strong> ${phone}</p>
-              </div>
-              ${shippingAddress ? `
-              <div style="background: #f0fdfa; padding: 20px; border-radius: 15px; border: 1px solid #ccfbf1;">
-                <h3 style="margin-top: 0; color: #0f766e;">Shipping Address</h3>
-                <p style="margin-bottom: 0;">
-                  ${shippingAddress.street || ''} ${shippingAddress.houseNumber || ''}<br/>
-                  ${shippingAddress.apartment ? `Apartment ${shippingAddress.apartment}<br/>` : ''}
-                  ${shippingAddress.city || ''}<br/>
-                  ${shippingAddress.zipCode ? `ZIP: ${shippingAddress.zipCode}` : ''}
-                </p>
-              </div>
-              ` : ''}
-              <div style="margin-top: 30px; text-align: center;">
-                <a href="https://teamindprogram.com/teamind-secure-portal-2024-v2" 
-                   style="background: #0d9488; color: white; padding: 12px 25px; text-decoration: none; border-radius: 50px; font-weight: bold;">
-                   View in Admin Panel
-                </a>
-              </div>
-            </div>
-          `,
-        })
-      );
+            `,
+          })
+        );
+      }
     }
 
     // 2. Send Separate Personalized Email to Customer

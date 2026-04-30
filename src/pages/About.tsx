@@ -28,7 +28,7 @@ export default function About() {
   const aboutImage = siteImages.about || "/images/about-fallback.jpg";
 
   return (
-    <div className="min-h-screen bg-[#fdfbf7] text-slate-900 font-sans selection:bg-brand-orange/30 selection:text-brand-orange pt-32 md:pt-40">
+    <div className="min-h-screen bg-[#fdfbf7] text-slate-900 font-sans selection:bg-brand-orange/30 selection:text-brand-orange pt-32 md:pt-48 overflow-x-hidden">
       <SEO 
         title={t('nav.about')} 
         description={aboutSubtitle}
@@ -37,29 +37,29 @@ export default function About() {
       />
 
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-6 mb-24">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+      <section className="max-w-[1440px] mx-auto px-6 md:px-12 mb-24 overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-8 text-start"
+            transition={{ duration: 0.8 }}
+            className="space-y-10 text-center lg:text-start order-2 lg:order-1"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-brand-orange/10 text-brand-orange rounded-full text-xs font-bold uppercase tracking-widest leading-none">
+            <div className="inline-flex items-center gap-2 px-6 py-2 bg-white border border-slate-100 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-brand-green-tech shadow-sm mx-auto lg:mx-0">
               <Sparkles className="w-4 h-4 shrink-0" />
               <span>{t('nav.about')}</span>
             </div>
-            <h1 className="text-5xl md:text-7xl font-serif font-bold tracking-tight leading-tight">
+            <h1 className="text-[40px] md:text-7xl lg:text-8xl font-serif font-medium tracking-tighter leading-[0.9]">
               {safeSplit(aboutTitle, '.').map((part: string, i: number, arr: string[]) => (
-                <span key={i}>
-                  {part}{i < arr.length - 1 ? '.' : ''}
-                  {i < arr.length - 1 && <br />}
+                <span key={i} className="block last:text-brand-green-tech last:italic">
+                  {part}
                 </span>
               ))}
             </h1>
-            <p className="text-xl text-slate-600 leading-relaxed font-medium">
+            <p className="text-xl text-slate-600 leading-relaxed font-medium max-w-2xl mx-auto lg:mx-0">
               {aboutText}
             </p>
-            <p className="text-lg text-slate-500 leading-relaxed">
+            <p className="text-lg text-slate-500 leading-relaxed max-w-2xl mx-auto lg:mx-0">
               {aboutSubtext}
             </p>
             {aboutFootnote && (
@@ -67,10 +67,10 @@ export default function About() {
                 {aboutFootnote}
               </p>
             )}
-            <div className="pt-8">
-              <Link to={`${prefix}/#contact`} className="px-10 py-5 bg-brand-orange text-white font-bold rounded-full text-lg hover:bg-brand-orange/90 transition-all hover:scale-105 shadow-xl shadow-brand-orange/20 flex items-center justify-center w-fit gap-2">
+            <div className="flex justify-center lg:justify-start pt-6">
+              <Link to={`${prefix}/#contact`} className="btn-primary bg-brand-orange shadow-brand-orange/20">
                 {t('programs.contact')}
-                <ArrowRight className={`w-5 h-5 ${isHe ? 'rotate-180' : ''}`} />
+                <ArrowRight className={`w-6 h-6 ${isHe ? 'rotate-180' : ''}`} />
               </Link>
             </div>
           </motion.div>
@@ -78,59 +78,59 @@ export default function About() {
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative"
+            transition={{ duration: 1, delay: 0.2 }}
+            className="relative order-1 lg:order-2 max-w-[500px] mx-auto lg:max-w-none w-full"
           >
-            <div className="aspect-square rounded-[64px] overflow-hidden shadow-2xl border-8 border-white bg-slate-50">
+            <div className="aspect-square rounded-[80px] overflow-hidden shadow-3xl shadow-brand-orange/20 border-[12px] border-white bg-white">
               <img 
                 src={aboutImage} 
                 alt="About TEAMIND" 
-                className={`w-full h-full object-cover transition-opacity duration-500 ${aboutImage ? 'opacity-100' : 'opacity-0'}`}
+                className={`w-full h-full object-cover transition-opacity duration-700 ${aboutImage ? 'opacity-100' : 'opacity-0'}`}
                 referrerPolicy="no-referrer"
                 loading="eager"
               />
             </div>
-            <div className="absolute -bottom-8 -inline-start-8 w-48 h-48 bg-orange-100 rounded-[40px] -z-10" />
           </motion.div>
         </div>
       </section>
 
       {/* Founders Section */}
-      <section id="founders" className="py-24 bg-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6">
+      <section id="founders" className="py-24 md:py-32 bg-white overflow-hidden">
+        <div className="max-w-[1440px] mx-auto px-6 md:px-12">
           <div className="text-center max-w-3xl mx-auto mb-20">
-            <h2 className="text-4xl md:text-6xl font-serif font-bold mb-8 leading-tight">
+            <h2 className="text-[32px] md:text-6xl font-sans font-bold md:font-medium lg:font-semibold mb-8 tracking-tighter leading-tight">
               {safeSplit(foundersTitle, '.').map((part: string, i: number, arr: string[]) => (
-                <span key={i}>
-                  {part}{i < arr.length - 1 ? '.' : ''}
-                  {i < arr.length - 1 && <br />}
+                <span key={i} className="block last:text-brand-green last:italic">
+                  {part}
                 </span>
               ))}
             </h2>
-            <p className="text-lg md:text-xl text-slate-600 font-medium leading-relaxed">
+            <p className="text-xl text-slate-500 font-medium leading-relaxed">
               {foundersSubtitle}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
             {foundersList.map((member: any, i: number) => (
               <motion.div 
                 key={i}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className="group bg-slate-50 rounded-[64px] overflow-hidden border border-slate-100 hover:shadow-2xl transition-all duration-500 text-start"
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.2 }}
+                className="group bg-slate-50 rounded-[64px] overflow-hidden border border-slate-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 text-center md:text-start"
               >
-                <div className="p-10 md:p-12 flex flex-col justify-center gap-6">
+                <div className="p-10 md:p-14 flex flex-col justify-center gap-8">
                   <div>
-                    <h3 className="text-3xl font-serif font-bold text-slate-900 mb-2">{member.name}</h3>
-                    <p className="text-brand-green font-black uppercase tracking-widest text-xs">{member.role}</p>
+                    <h3 className="text-3xl md:text-4xl font-sans font-bold text-slate-900 mb-3 tracking-tighter">{member.name}</h3>
+                    <p className="inline-block px-4 py-1 bg-brand-green/10 text-brand-green font-bold uppercase tracking-[0.2em] text-[10px] rounded-full">{member.role}</p>
                   </div>
-                  <p className="text-slate-600 font-medium leading-relaxed text-sm">
+                  <p className="text-slate-500 font-medium leading-relaxed text-lg">
                     {member.desc}
                   </p>
-                  <div className="flex flex-wrap gap-4 pt-4">
+                  <div className="flex flex-wrap justify-center md:justify-start gap-3 pt-4">
                     {member.stats.map((stat: string, j: number) => (
-                      <div key={j} className="px-4 py-2 bg-white rounded-2xl border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      <div key={j} className="px-4 py-2 bg-white rounded-2xl border border-slate-200 text-[10px] font-bold uppercase tracking-widest text-slate-400">
                         {stat}
                       </div>
                     ))}
@@ -143,15 +143,19 @@ export default function About() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 bg-brand-orange text-white">
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <h2 className="text-4xl md:text-6xl font-serif font-bold mb-8">{t('programs.ready')}</h2>
-          <p className="text-xl text-white/80 mb-12 max-w-2xl mx-auto font-medium">
+      <section className="py-24 md:py-32 bg-brand-orange text-white overflow-hidden relative">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full blur-[120px] translate-x-1/2 translate-y-1/2" />
+        </div>
+        <div className="max-w-5xl mx-auto px-6 text-center relative z-10">
+          <h2 className="text-[40px] md:text-8xl font-sans font-bold mb-10 tracking-tighter leading-none">{t('programs.ready')}</h2>
+          <p className="text-xl md:text-2xl text-white/80 mb-16 max-w-2xl mx-auto font-medium leading-relaxed">
             {t('programs.join')}
           </p>
-          <Link to={`${prefix}/#contact`} className="inline-flex items-center gap-2 px-10 py-5 bg-white text-brand-orange font-bold rounded-full text-lg hover:bg-slate-100 hover:scale-105 transition-all shadow-2xl">
+          <Link to={`${prefix}/#contact`} className="inline-flex items-center gap-4 px-12 py-6 bg-white text-brand-orange font-bold rounded-full text-xl hover:bg-slate-50 transition-all shadow-3xl hover:-translate-y-1 active:scale-95">
             {t('programs.contact')}
-            <ArrowRight className={`w-5 h-5 ${isHe ? 'rotate-180' : ''}`} />
+            <ArrowRight className={`w-7 h-7 ${isHe ? 'rotate-180' : ''}`} />
           </Link>
         </div>
       </section>

@@ -63,7 +63,13 @@ const CheckoutPage = () => {
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.name.trim()) newErrors.name = t('checkout.nameRequired');
+    const nameTrimmed = formData.name.trim();
+    if (!nameTrimmed) {
+      newErrors.name = t('checkout.nameRequired');
+    } else if (!nameTrimmed.includes(' ')) {
+      newErrors.name = isHe ? "אנא הזן שם מלא (שם פרטי ושם משפחה)" : "Please enter full name (First and Last name)";
+    }
+    
     if (!formData.email.trim()) {
       newErrors.email = t('checkout.emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -112,7 +118,7 @@ const CheckoutPage = () => {
           >
             <div className="bg-brand-green p-8 text-white text-center">
               <ShoppingBag className="w-12 h-12 mx-auto mb-4 opacity-80" />
-              <h1 className="text-3xl font-serif font-bold">{t('checkout.title')}</h1>
+              <h1 className="text-3xl font-sans font-bold">{t('checkout.title')}</h1>
               <p className="text-white/80 mt-2">{formData.productName}</p>
             </div>
             
@@ -173,7 +179,7 @@ const CheckoutPage = () => {
                 </div>
 
                 <div className="pt-4 border-t border-slate-100 text-start">
-                  <h3 className="text-lg font-serif font-bold text-slate-900 mb-4">{t('checkout.shippingAddress')}</h3>
+                  <h3 className="text-lg font-sans font-bold text-slate-900 mb-4">{t('checkout.shippingAddress')}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-widest">{t('checkout.city')}</label>
@@ -247,7 +253,7 @@ const CheckoutPage = () => {
                   </div>
                   <div className="flex justify-between items-center pt-4 border-t border-slate-200">
                     <span className="text-lg font-bold text-slate-900">{t('checkout.total')}</span>
-                    <span className="text-2xl font-serif font-bold text-brand-green">₪{formData.amount}</span>
+                    <span className="text-2xl font-sans font-bold text-brand-green">₪{formData.amount}</span>
                   </div>
                 </div>
                 

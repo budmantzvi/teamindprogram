@@ -14,7 +14,7 @@ import { useSite } from '../lib/SiteContext';
 import { processOrderSuccess } from '../lib/orderUtils';
 import { useTranslation } from 'react-i18next';
 
-import { DEFAULT_CONFIG, safeSplit, getSynchronizedCharacters } from '../lib/constants';
+import { DEFAULT_CONFIG, safeSplit, getSynchronizedCharacters, FALLBACK_IMAGES } from '../lib/constants';
 
 const testimonials = [
   { name: "Sarah J.", role: "Preschool Teacher", text: "TEAMIND has completely changed the digital and emotional landscape of my classroom. The kids are obsessed with Driver Dan and Brainman!", image: "https://i.pravatar.cc/150?u=sarah" },
@@ -53,9 +53,9 @@ const characters = [
   { name: "Brainman", role: "The Leader", desc: "Responsible for the human brain that controls all body functions, leading his wonderful team with wisdom.", color: "bg-brand-yellow", icon: Brain, image: "/images/brainman.png" },
   { name: "Driver Dan", role: "Focus & Shifting", desc: "Focuses and shifts attention, efficiently guiding calm and smooth transitions between activities.", color: "bg-brand-orange", icon: Brain, image: "/images/driver dan.png" },
   { name: "Lenny the Ladder", role: "Organization", desc: "A master of order and planning. Helps even the messiest learners approach and complete tasks efficiently.", color: "bg-brand-green", icon: Zap, image: "/images/lenny the ladder.png" },
-  { name: "Moni Matzlemoni", role: "Working Memory", desc: "A memory phenomenon with a toolkit of techniques to help remember daily and multi-step tasks.", color: "bg-brand-light-blue", icon: Clock, image: "/images/memory max.png" },
-  { name: "Libi HaMareh", role: "Emotional Reflection", desc: "Gentle and sensitive, she reflects internal and others' feelings to help build healthy relationships.", color: "bg-brand-pink", icon: Heart, image: "/images/molly the mirror.png" },
-  { name: "Tom HaTamrur", role: "Response Inhibition", desc: "A balanced leader who controls reactions, helping to pause and reduce impulsive behaviors.", color: "bg-brand-red", icon: ShieldCheck, image: "/images/stoper stan.png" },
+  { name: "Memory Max", role: "Working Memory", desc: "He captures learning moments, helping remember daily and multi-step tasks through visual memory techniques.", color: "bg-brand-light-blue", icon: Clock, image: "/images/memory max.png" },
+  { name: "Molly the Mirror", role: "Emotional Reflection", desc: "Gentle and sensitive, she reflects internal and others' feelings to help build healthy relationships.", color: "bg-brand-pink", icon: Heart, image: "/images/molly the mirror.png" },
+  { name: "Stopper Stan", role: "Response Inhibition", desc: "A balanced leader who controls reactions, helping to pause and reduce impulsive behaviors.", color: "bg-brand-red", icon: ShieldCheck, image: "/images/stopper stan.png" },
 ];
 
 export default function Home() {
@@ -121,8 +121,8 @@ export default function Home() {
   const charactersTitle = t_config('charactersTitle');
   const charactersSubtitle = t_config('charactersSubtitle');
   
-  const heroImage = siteImages.hero || "/images/hero-fallback.jpg";
-  const aboutImage = siteImages.about || "/images/about-fallback.jpg";
+  const heroImage = siteImages.hero || FALLBACK_IMAGES.hero;
+  const aboutImage = siteImages.about || FALLBACK_IMAGES.about;
 
   // Use localized versions of arrays if they exist in siteConfig
   const isHe = i18n.language === 'he';
@@ -137,7 +137,16 @@ export default function Home() {
     characters, 
     charactersList, 
     isHe ? DEFAULT_CONFIG.charactersList_he : DEFAULT_CONFIG.charactersList
-  );
+  ).map((char: any) => {
+    // Force specific updates requested by user
+    if (char.name === "Memory Max" || char.name === "מוני מצלמוני") {
+      return { ...char, desc: isHe ? "הוא מצלם וקולט רגעי למידה, עוזר לזכור משימות יומיות ומשימות מרובות שלבים באמצעות טכניקות זיכרון חזותיות." : "He captures learning moments, helping remember daily and multi-step tasks through visual memory techniques." };
+    }
+    if (char.name === "Stopper Stan" || char.name === "Stoper Stan" || char.name === "תום התמרור") {
+      return { ...char, name: isHe ? "תום התמרור" : "Stopper Stan" };
+    }
+    return char;
+  });
 
   const earlyData = t_config('earlyChildhood');
   const earlyDescription = earlyData?.cardDescription || "";
@@ -211,83 +220,86 @@ export default function Home() {
       
       {/* Hero Section */}
       {(siteConfig?.showHero !== false) && (
-        <section className="relative min-h-[90vh] flex items-center pt-24 md:pt-32 overflow-hidden" aria-labelledby="hero-heading">
+        <section className="relative min-h-[90vh] flex items-center pt-32 md:pt-48 pb-20 overflow-hidden bg-white" aria-labelledby="hero-heading">
           <div className="absolute inset-0 -z-10">
-            <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-brand-light-blue/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
-            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-brand-pink/20 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4" />
+            <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-brand-light-blue/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/4" />
+            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-brand-pink/5 rounded-full blur-[100px] translate-y-1/4 -translate-x-1/4" />
           </div>
 
-          <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="space-y-8 text-start"
-            >
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white border border-slate-100 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-brand-orange shadow-sm">
-                <Sparkles className="w-4 h-4 shrink-0" />
-                <span>{heroBadge}</span>
-              </div>
-              <h1 className="text-5xl md:text-7xl font-serif font-bold tracking-tight leading-[0.95] text-slate-900">
-                {safeSplit(heroTitle, '.').map((part: string, i: number, arr: string[]) => (
-                  <span key={i}>
-                    {part}{i < arr.length - 1 ? '.' : ''}
-                    {i < arr.length - 1 && <br />}
-                  </span>
-                ))}
-              </h1>
-              <p className="text-lg md:text-xl text-slate-600 leading-relaxed font-medium max-w-xl">
-                {heroSubtitle}
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <Link to={`${prefix}/#program`} className="px-8 py-4 bg-brand-light-blue text-white font-black rounded-full text-base hover:bg-brand-light-blue/90 transition-all hover:scale-105 shadow-2xl shadow-brand-light-blue/20 flex items-center justify-center gap-2">
-                  {heroBtnPrimary}
-                  <ArrowRight className={`w-5 h-5 ${isHe ? 'rotate-180' : ''}`} />
-                </Link>
-                <Link to={`${prefix}/#video`} className="px-8 py-4 bg-white text-slate-900 font-black rounded-full text-base border border-slate-100 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm">
-                  {heroBtnSecondary}
-                  <Play className={`w-5 h-5 fill-current ${isHe ? 'rotate-180' : ''}`} />
-                </Link>
-              </div>
-            </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 1, delay: 0.2 }}
-              className="relative"
-            >
-              <div className="aspect-square rounded-[64px] overflow-hidden shadow-2xl border-8 border-white bg-white">
-                {heroImage ? (
-                  <img 
-                    src={heroImage} 
-                    alt="TEAMIND Hero" 
-                    className="w-full h-full object-contain"
-                    referrerPolicy="no-referrer"
-                    loading="eager"
-                    fetchPriority="high"
-                    decoding="async"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-slate-50 animate-pulse flex items-center justify-center">
-                    <Brain className="w-12 h-12 text-slate-200" />
-                  </div>
-                )}
-              </div>
+          <div className="max-w-[1440px] mx-auto px-6 md:px-12 w-full">
+            <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
               <motion.div 
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 4, repeat: Infinity }}
-                className="absolute -bottom-6 -left-6 bg-white p-4 md:p-6 rounded-[32px] shadow-2xl border border-slate-50 flex items-center gap-4 z-10"
+                initial={{ opacity: 0, x: isHe ? 50 : -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="text-center lg:text-start"
               >
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-brand-light-blue/20 rounded-2xl flex items-center justify-center text-brand-light-blue">
-                  <Brain className="w-5 h-5 md:w-6 md:h-6" />
+                <div className="inline-flex items-center gap-2 mb-8 group">
+                  <Sparkles className="w-4 h-4 text-brand-orange transition-transform group-hover:rotate-12" />
+                  <span className="text-brand-orange font-bold uppercase tracking-[0.25em] text-[10px] md:text-xs">{heroBadge}</span>
                 </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('common.cognitive')}</p>
-                  <p className="text-sm md:text-lg font-serif font-bold text-slate-900">{t('common.executiveSkills')}</p>
+                <h1 className="text-[44px] md:text-7xl lg:text-8xl font-serif font-medium tracking-tighter leading-[0.95] text-slate-900 mb-8">
+                  {safeSplit(heroTitle, '.').map((part: string, i: number, arr: string[]) => (
+                    <span key={i} className={`block ${i === arr.length - 1 ? "text-brand-green-tech italic" : ""}`}>
+                      {part}{i < arr.length - 1 ? '.' : ''}
+                    </span>
+                  ))}
+                </h1>
+                <p className="text-xl md:text-2xl text-slate-500 mb-12 leading-relaxed max-w-2xl mx-auto lg:mx-0 font-medium">
+                  {heroSubtitle}
+                </p>
+                <div className="flex flex-col md:flex-row items-center gap-6 justify-center lg:justify-start">
+                  <Link to={`${prefix}/#program`} className="w-full md:w-auto h-14 px-10 rounded-full bg-brand-light-blue text-white font-bold flex items-center justify-center gap-2 hover:bg-brand-light-blue/90 transition-all shadow-xl shadow-brand-light-blue/20 active:scale-95 text-lg group">
+                    {heroBtnPrimary}
+                    <ArrowRight className={`w-6 h-6 transition-transform group-hover:translate-x-1 ${isHe ? 'rotate-180' : ''}`} />
+                  </Link>
+                  <Link to={`${prefix}/#contact`} className="w-full md:w-auto h-14 px-10 rounded-full bg-white text-slate-900 font-bold flex items-center justify-center gap-2 border-2 border-slate-200 shadow-sm hover:border-brand-orange/20 transition-all text-lg active:scale-95">
+                    {t('nav.contact')}
+                  </Link>
                 </div>
               </motion.div>
-            </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, x: isHe ? -50 : 50 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
+                className="relative hidden lg:block"
+              >
+                <div className="relative aspect-square w-full max-w-[600px] mx-auto">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-brand-green/10 to-transparent rounded-[80px] rotate-6 -z-10" />
+                  <div className="absolute inset-0 bg-white rounded-[80px] shadow-3xl overflow-hidden border border-slate-50">
+                    {heroImage ? (
+                      <img 
+                        src={heroImage} 
+                        alt="TEAMIND Hero" 
+                        className="w-full h-full object-contain"
+                        referrerPolicy="no-referrer"
+                        loading="eager"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-slate-50 flex items-center justify-center">
+                        <Brain className="w-16 h-16 text-slate-200" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Floating Info card */}
+                  <motion.div 
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute -bottom-8 -left-12 bg-white p-8 rounded-[40px] shadow-2xl border border-slate-50 flex items-center gap-6 z-10"
+                  >
+                    <div className="w-16 h-16 bg-brand-green/10 rounded-3xl flex items-center justify-center text-brand-green">
+                      <Brain className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-2">{t('common.cognitive')}</p>
+                      <p className="text-xl font-bold text-slate-900 tracking-tight leading-none">{t('common.executiveSkills')}</p>
+                    </div>
+                  </motion.div>
+                </div>
+              </motion.div>
+            </div>
           </div>
         </section>
       )}
@@ -295,15 +307,15 @@ export default function Home() {
       {/* Video Section */}
       {(siteConfig?.showVideo !== false) && (
         <section id="video" className="py-24 bg-white">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="aspect-video rounded-[48px] overflow-hidden shadow-2xl border-8 border-slate-50 relative group cursor-pointer bg-slate-100">
+          <div className="max-w-[1440px] mx-auto px-6 md:px-12">
+            <div className="aspect-video rounded-[64px] overflow-hidden shadow-3xl border-[10px] border-slate-50 relative group cursor-pointer bg-slate-100">
               {!isPlaying && (
                 <div 
                   onClick={handlePlay}
                   className="absolute inset-0 z-10 transition-all duration-700 group-hover:scale-105"
                 >
                   <img 
-                    src={siteImages.videoThumbnail || aboutImage} 
+                    src={siteImages.videoThumbnail || FALLBACK_IMAGES.videoThumbnail} 
                     alt="Video Cover" 
                     className="w-full h-full object-cover brightness-90"
                     referrerPolicy="no-referrer"
@@ -322,7 +334,7 @@ export default function Home() {
                     <motion.img 
                       animate={{ y: [0, 10, 0] }}
                       transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                      src="/images/stoper stan.png" 
+                      src="/images/stopper stan.png" 
                       className="absolute bottom-20 left-10 w-20 md:w-28 opacity-80"
                       referrerPolicy="no-referrer"
                     />
@@ -332,11 +344,11 @@ export default function Home() {
                   
                   <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12 flex items-end justify-between gap-6">
                     <div className="space-y-3 text-start">
-                      <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-brand-orange text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-full shadow-lg">
+                      <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-brand-orange text-white text-[10px] font-bold uppercase tracking-[0.2em] rounded-full shadow-lg">
                         <Play className="w-3.5 h-3.5 fill-current" />
                         <span>{videoBadge}</span>
                       </div>
-                      <h3 className="text-3xl md:text-5xl font-serif font-bold text-white tracking-tight">
+                      <h3 className="text-3xl md:text-5xl font-sans font-bold text-white tracking-tight">
                         {safeSplit(videoTitle, '.').map((part: string, i: number, arr: string[]) => (
                           <span key={i}>
                             {part}{i < arr.length - 1 ? '.' : ''}
@@ -378,14 +390,13 @@ export default function Home() {
       {/* About Section */}
       {(siteConfig?.showAbout !== false) && (
         <section id="about" className="py-24 bg-white">
-          <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-[1440px] mx-auto px-6 md:px-12">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-              <div className="space-y-8 text-start">
-                <h2 className="text-4xl md:text-6xl font-serif font-bold leading-tight">
+              <div className="space-y-10 text-center lg:text-start">
+                <h2 className="text-[32px] md:text-6xl font-sans font-bold md:font-medium lg:font-semibold leading-[1.1] tracking-tighter">
                   {safeSplit(aboutTitle, '.').map((part: string, i: number, arr: string[]) => (
-                    <span key={i}>
+                    <span key={i} className="block">
                       {part}{i < arr.length - 1 ? '.' : ''}
-                      {i < arr.length - 1 && <br />}
                     </span>
                   ))}
                 </h2>
@@ -397,21 +408,20 @@ export default function Home() {
                     {aboutSubtext}
                   </p>
                   {aboutFootnote && (
-                    <p className="text-sm text-slate-400 italic pt-4">
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest pt-8 border-t border-slate-50">
                       {aboutFootnote}
                     </p>
                   )}
                 </div>
               </div>
               <div className="relative">
-                <div className="aspect-square rounded-[64px] overflow-hidden shadow-2xl border-8 border-white bg-slate-50">
+                <div className="aspect-[4/3] md:aspect-square rounded-[64px] overflow-hidden shadow-3xl border-[12px] border-white bg-slate-50">
                   <img 
                     src={aboutImage} 
                     alt="TEAMIND Program" 
-                    className={`w-full h-full object-cover transition-opacity duration-500 ${aboutImage ? 'opacity-100' : 'opacity-0'}`}
+                    className={`w-full h-full object-cover transition-opacity duration-1000 ${aboutImage ? 'opacity-100' : 'opacity-0'}`}
                     referrerPolicy="no-referrer"
                     loading="lazy"
-                    decoding="async"
                   />
                 </div>
               </div>
@@ -422,33 +432,37 @@ export default function Home() {
 
       {/* Why Section */}
       {(siteConfig?.showWhy !== false) && (
-        <section className="py-24 bg-slate-50">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="text-center max-w-3xl mx-auto mb-20">
-              <h2 className="text-4xl md:text-6xl font-serif font-bold mb-8">
+        <section className="py-24 md:py-32 lg:py-40 bg-slate-50">
+          <div className="max-w-[1440px] mx-auto px-6 md:px-12">
+            <div className="text-center max-w-3xl mx-auto mb-20 lg:mb-32">
+              <h2 className="text-[32px] md:text-5xl lg:text-5xl font-serif font-medium tracking-tighter mb-8 leading-tight">
                 {safeSplit(whyTitle, ' ').map((word: string, i: number, arr: string[]) => (
-                  <span key={i} className={i === arr.length - 1 ? "text-brand-green italic" : ""}>
+                  <span key={i} className={i === arr.length - 1 ? "text-brand-green-tech italic" : "block md:inline"}>
                     {word}{i < arr.length - 1 ? ' ' : ''}
                   </span>
                 ))}
               </h2>
-              <p className="text-xl text-slate-600 font-medium">
+              <p className="text-xl text-slate-500 font-medium leading-relaxed">
                 {whySubtitle}
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
               {whyCards.map((item: any, i: number) => {
                 const IconComp = iconMap[item.icon] || Award;
-                const colors = ['bg-brand-red/10 text-brand-red', 'bg-brand-orange/10 text-brand-orange', 'bg-brand-light-blue/10 text-brand-light-blue'];
-                const colorClass = colors[i % colors.length];
+                const palette = [
+                  'bg-brand-red/10 text-brand-red', 
+                  'bg-brand-orange/10 text-brand-orange', 
+                  'bg-brand-light-blue/10 text-brand-light-blue'
+                ];
+                const colorClass = palette[i % palette.length];
                 return (
-                  <div key={i} className="p-10 bg-white rounded-[48px] border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
-                    <div className={`w-16 h-16 ${colorClass.split(' ')[0]} rounded-2xl flex items-center justify-center ${colorClass.split(' ')[1]} mb-8 group-hover:scale-110 transition-transform`}>
-                      <IconComp className="w-8 h-8" />
+                  <div key={i} className="p-12 md:p-14 bg-white rounded-[48px] border border-slate-100 shadow-sm hover:shadow-2xl transition-all group hover:-translate-y-2">
+                    <div className={`w-20 h-20 ${colorClass.split(' ')[0]} rounded-[28px] flex items-center justify-center ${colorClass.split(' ')[1]} mb-10 group-hover:scale-110 transition-transform`}>
+                      <IconComp className="w-10 h-10" />
                     </div>
-                    <h3 className="text-2xl font-serif font-bold mb-4">{item.title}</h3>
-                    <p className="text-slate-600 font-medium leading-relaxed text-start">{item.desc}</p>
+                    <h3 className="text-2xl md:text-3xl font-bold mb-6 tracking-tight">{item.title}</h3>
+                    <p className="text-slate-500 font-medium leading-relaxed text-start">{item.desc}</p>
                   </div>
                 );
               })}
@@ -459,10 +473,10 @@ export default function Home() {
 
       {/* Program Section */}
       {(siteConfig?.showPrograms !== false) && (
-        <section id="program" className="py-24 bg-white">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="text-center max-w-3xl mx-auto mb-20">
-              <h2 className="text-4xl md:text-6xl font-serif font-bold mb-8">
+        <section id="program" className="py-24 md:py-32 lg:py-44 bg-white">
+          <div className="max-w-[1440px] mx-auto px-6 md:px-12">
+            <div className="text-center max-w-3xl mx-auto mb-20 lg:mb-32">
+              <h2 className="text-4xl md:text-6xl font-sans font-bold mb-8">
                 {safeSplit(programsTitle, ' ').map((word: string, i: number, arr: string[]) => (
                   <span key={i} className={i === arr.length - 1 ? "text-brand-light-blue italic" : ""}>
                     {word}{i < arr.length - 1 ? ' ' : ''}
@@ -501,11 +515,11 @@ export default function Home() {
 
       {/* Characters Section */}
       {(siteConfig?.showCharacters !== false) && (
-        <section id="characters" className="py-24 bg-white overflow-hidden">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-20 text-start">
+        <section id="characters" className="py-24 md:py-32 lg:py-44 bg-white overflow-hidden">
+          <div className="max-w-[1440px] mx-auto px-6 md:px-12">
+            <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-20 lg:mb-32 text-start">
               <div className="max-w-2xl">
-                <h2 className="text-4xl md:text-6xl font-serif font-bold mb-8">
+                <h2 className="text-4xl md:text-6xl font-sans font-bold mb-8">
                   {safeSplit(charactersTitle, ' ').map((word: string, i: number, arr: string[]) => (
                     <span key={i} className={i === arr.length - 1 ? "text-brand-orange italic" : ""}>
                       {word}{i < arr.length - 1 ? ' ' : ''}
@@ -536,9 +550,11 @@ export default function Home() {
                       />
                     </div>
                   </div>
-                  <h3 className="text-2xl font-serif font-bold mb-2 text-center text-slate-900">{char.name}</h3>
-                  <p className="text-brand-pink text-sm font-black uppercase tracking-widest mb-4 text-center">{char.role}</p>
-                  <p className="text-slate-600 font-medium leading-relaxed text-center">{char.desc}</p>
+                  <h3 className="text-2xl font-sans font-bold mb-2 text-center text-slate-900 transition-colors uppercase tracking-tight">{char.name}</h3>
+                  <p className="text-brand-pink text-xs font-bold uppercase tracking-widest mb-4 text-center">{char.role}</p>
+                  <p className="text-slate-600 font-medium leading-relaxed text-center line-clamp-3 lg:line-clamp-none overflow-hidden h-20 lg:h-auto">
+                    {char.desc}
+                  </p>
                 </motion.div>
               ))}
             </div>
@@ -548,10 +564,10 @@ export default function Home() {
 
       {/* Testimonials Marquee */}
       {(siteConfig?.showSuccessStories !== false) && (
-        <section className="py-24 bg-white overflow-hidden">
-          <div className="max-w-7xl mx-auto px-6 mb-16">
-            <h2 className="text-4xl font-serif font-bold text-center">
-              {t('home.successStoriesTitle')} <span className="text-brand-green italic">{t('home.successStoriesSubtitle')}</span>
+        <section className="py-24 md:py-32 lg:py-40 bg-white overflow-hidden">
+          <div className="max-w-[1440px] mx-auto px-6 md:px-12 mb-16 lg:mb-24">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-sans font-bold text-center tracking-tighter">
+              {t('home.successStoriesTitle')} <span className="text-brand-light-blue italic">{t('home.successStoriesSubtitle')}</span>
             </h2>
           </div>
           
@@ -563,17 +579,17 @@ export default function Home() {
               {[...testimonialsList, ...testimonialsList].map((t: any, i: number) => (
                 <div 
                   key={i} 
-                  className={`mx-4 w-[400px] p-8 bg-slate-50 rounded-[40px] border border-slate-100 flex flex-col gap-6 shrink-0 transition-all ${isHe ? 'text-right' : 'text-left'}`}
+                  className={`mx-4 w-[85vw] md:w-[450px] p-10 md:p-12 bg-slate-50 rounded-[48px] border border-slate-100 flex flex-col gap-8 shrink-0 transition-all ${isHe ? 'text-right' : 'text-left'}`}
                   dir={isHe ? 'rtl' : 'ltr'}
                   onMouseEnter={() => setIsMarqueePaused(true)}
                   onMouseLeave={() => setIsMarqueePaused(false)}
                 >
-                  <p className="text-slate-600 font-medium italic leading-relaxed whitespace-normal">"{t.text}"</p>
-                  <div className={`flex items-center gap-4 mt-auto ${isHe ? 'flex-row-reverse' : ''}`}>
-                    <img src={t.image} alt={t.name} className="w-12 h-12 rounded-full object-cover" referrerPolicy="no-referrer" loading="lazy" decoding="async" />
+                  <p className="text-slate-600 text-lg md:text-xl font-medium italic leading-relaxed whitespace-normal">"{t.text}"</p>
+                  <div className={`flex items-center gap-6 mt-auto ${isHe ? 'flex-row-reverse' : ''}`}>
+                    <img src={t.image} alt={t.name} className="w-16 h-16 rounded-full object-cover shadow-md border-4 border-white" referrerPolicy="no-referrer" loading="lazy" decoding="async" />
                     <div className={isHe ? 'text-right' : 'text-left'}>
-                      <h4 className="font-bold text-slate-900">{t.name}</h4>
-                      <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{t.role}</p>
+                      <h4 className="font-bold text-slate-900 text-lg">{t.name}</h4>
+                      <p className="text-xs text-brand-orange font-bold uppercase tracking-widest">{t.role}</p>
                     </div>
                   </div>
                 </div>
@@ -585,42 +601,42 @@ export default function Home() {
 
       {/* Founders Section */}
       {(siteConfig?.showFounders !== false) && (
-        <section id="founders" className="py-24 bg-white overflow-hidden">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="text-center max-w-3xl mx-auto mb-20">
-              <h2 className="text-4xl md:text-6xl font-serif font-bold mb-8 leading-tight">
+        <section id="founders" className="py-24 md:py-32 lg:py-40 bg-white overflow-hidden">
+          <div className="max-w-[1440px] mx-auto px-6 md:px-12">
+            <div className="text-center max-w-3xl mx-auto mb-20 lg:mb-32">
+              <h2 className="text-[32px] md:text-5xl lg:text-5xl font-sans font-bold md:font-medium lg:font-semibold mb-8 leading-[1.1] tracking-tighter">
                 {safeSplit(foundersTitle, '.').map((part: string, i: number, arr: string[]) => (
-                  <span key={i}>
+                  <span key={i} className="block">
                     {part}{i < arr.length - 1 ? '.' : ''}
-                    {i < arr.length - 1 && <br />}
                   </span>
                 ))}
               </h2>
-              <p className="text-lg md:text-xl text-slate-600 font-medium leading-relaxed">
+              <p className="text-xl text-slate-500 font-medium leading-relaxed">
                 {foundersSubtitle}
               </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
               {foundersList.map((member: any, i: number) => (
                 <motion.div 
                   key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
                   transition={{ delay: i * 0.1 }}
-                  className="group bg-slate-50 rounded-[64px] overflow-hidden border border-slate-100 hover:shadow-2xl transition-all duration-500 text-start"
+                  className="group bg-slate-50 rounded-[56px] overflow-hidden border border-slate-100 hover:shadow-3xl transition-all duration-700 text-center lg:text-start"
                 >
-                  <div className="p-10 md:p-12 flex flex-col justify-center gap-6">
+                  <div className="p-10 md:p-14 flex flex-col justify-center gap-8">
                     <div>
-                      <h3 className="text-3xl font-serif font-bold text-slate-900 mb-2">{member.name}</h3>
-                      <p className="text-brand-green font-black uppercase tracking-widest text-xs">{member.role}</p>
+                      <h3 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4 tracking-tighter">{member.name}</h3>
+                      <p className="inline-block px-4 py-1.5 bg-brand-green/10 text-brand-green font-bold uppercase tracking-widest text-[10px] rounded-full">{member.role}</p>
                     </div>
-                    <p className="text-slate-600 font-medium leading-relaxed text-sm">
+                    <p className="text-slate-600 font-medium leading-relaxed text-base md:text-lg">
                       {member.desc}
                     </p>
-                    <div className="flex flex-wrap gap-4 pt-4">
+                    <div className="flex flex-wrap justify-center lg:justify-start gap-3 pt-6 border-t border-slate-200/50">
                       {member.stats.map((stat: string, j: number) => (
-                        <div key={j} className="px-4 py-2 bg-white rounded-2xl border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        <div key={j} className="px-5 py-2 bg-white rounded-2xl border border-slate-200 text-[10px] font-bold uppercase tracking-widest text-slate-400">
                           {stat}
                         </div>
                       ))}
@@ -635,9 +651,9 @@ export default function Home() {
 
       {/* FAQ Section */}
       {(siteConfig?.showFaq !== false) && (
-        <section className="py-24 bg-white">
+        <section className="py-24 md:py-32 lg:py-40 bg-white">
           <div className="max-w-3xl mx-auto px-6">
-            <h2 className="text-4xl font-serif font-bold mb-16 text-center">
+            <h2 className="text-4xl md:text-5xl lg:text-5xl font-sans font-bold mb-16 lg:mb-24 text-center tracking-tighter">
               {safeSplit(faqTitle, ' ').map((word: string, i: number, arr: string[]) => (
                 <span key={i} className={i === arr.length - 1 ? "text-brand-pink italic" : ""}>
                   {word}{i < arr.length - 1 ? ' ' : ''}
@@ -675,47 +691,44 @@ export default function Home() {
 
       {/* Contact Section */}
       {(siteConfig?.showContact !== false) && (
-        <section id="contact" className="py-24 bg-slate-50">
+        <section id="contact" className="py-24 md:py-32 lg:py-40 bg-slate-50">
           <div className="max-w-7xl mx-auto px-6">
-            <div className="bg-white rounded-[64px] overflow-hidden shadow-2xl border border-slate-100 grid grid-cols-1 lg:grid-cols-2">
-              <div className="p-12 md:p-20 space-y-12">
-                <div className="space-y-6">
-                  <h2 className="text-4xl md:text-6xl font-serif font-bold leading-tight">
+            <div className="bg-white rounded-[80px] overflow-hidden shadow-3xl border border-slate-100 grid grid-cols-1 lg:grid-cols-2">
+              <div className="p-12 md:p-24 space-y-12 flex flex-col justify-center text-center lg:text-start">
+                <div className="space-y-8">
+                  <h2 className="text-[40px] md:text-7xl font-sans font-bold leading-none tracking-tighter">
                     {safeSplit(contactTitle, '.').map((part: string, i: number, arr: string[]) => (
-                      <span key={i} className={i === 0 ? "text-brand-red" : ""}>
+                      <span key={i} className={`block ${i === 0 ? "text-brand-red" : ""}`}>
                         {part}{i < arr.length - 1 ? '.' : ''}
-                        {i < arr.length - 1 && <br />}
                       </span>
                     ))}
                   </h2>
-                  <p className="text-xl text-slate-600 font-medium">{contactSubtitle}</p>
+                  <p className="text-xl text-slate-500 font-medium leading-relaxed max-w-md mx-auto lg:mx-0">{contactSubtitle}</p>
                 </div>
                 
-                <div className="space-y-6">
-                  <div className="flex flex-col gap-4">
-                    <a 
-                      href={`https://mail.google.com/mail/?view=cm&fs=1&to=${contactEmail}`}
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-4 px-8 py-4 bg-brand-light-blue text-white rounded-full font-black text-lg hover:bg-brand-light-blue/90 transition-all hover:scale-105 shadow-xl shadow-brand-light-blue/20"
-                    >
-                      <Mail className="w-6 h-6" />
-                      {t('footer.emailUs', { defaultValue: 'Email Us' })}
-                    </a>
-                    
-                    <a 
-                      href={`https://wa.me/${contactPhone.replace(/\+/g, '')}`}
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-4 px-8 py-4 bg-brand-green text-white rounded-full font-black text-lg hover:bg-brand-green/90 transition-all hover:scale-105 shadow-xl shadow-brand-green/20"
-                    >
-                      <MessageCircle className="w-6 h-6" />
-                      {t('footer.whatsappUs', { defaultValue: 'WhatsApp Us' })}
-                    </a>
-                  </div>
+                <div className="flex flex-col gap-6 w-full max-w-sm mx-auto lg:mx-0">
+                  <a 
+                    href={`https://mail.google.com/mail/?view=cm&fs=1&to=${contactEmail}`}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="btn-primary bg-brand-light-blue hover:bg-brand-light-blue/90 shadow-brand-light-blue/20"
+                  >
+                    <Mail className="w-6 h-6" />
+                    <span className="font-bold">{t('footer.emailUs', { defaultValue: 'Email Us' })}</span>
+                  </a>
+                  
+                  <a 
+                    href={`https://wa.me/${contactPhone.replace(/\+/g, '')}`}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="btn-primary bg-[#25D366] hover:bg-[#20bd5c] shadow-[#25D366]/20 border-none"
+                  >
+                    <MessageCircle className="w-6 h-6 text-white" />
+                    <span className="font-bold text-white">{t('footer.whatsappUs', { defaultValue: 'WhatsApp Us' })}</span>
+                  </a>
                 </div>
               </div>
-              <div className="p-12 md:p-20 bg-slate-50/50">
+              <div className="p-12 md:p-24 bg-slate-50/50">
                 <ContactForm />
               </div>
             </div>

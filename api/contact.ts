@@ -143,39 +143,40 @@ export default async function handler(req: any, res: any) {
   };
 
   try {
-    // 1. Email to Team (BCC for efficiency)
+    // 1. Email to Team (Individual emails to avoid BCC privacy/header confusion)
     if ((notificationSetting === 'both' || notificationSetting === 'admin') && recipients.length > 0) {
-      const primaryAdmin = recipients[0];
-      const otherAdmins = recipients.slice(1);
-      
-      console.log(`[Vercel Contact] Sending admin notification to ${primaryAdmin} (BCC: ${otherAdmins.length} others)`);
-      
-      const { data, error } = await resend.emails.send({
-        from: 'TEAMIND Contact <support@teamindprogram.com>',
-        to: [primaryAdmin],
-        bcc: otherAdmins.length > 0 ? otherAdmins : undefined,
-        replyTo: email, // Allow admin to reply directly to user
-        subject: `New Message from ${name}`,
-        html: `
-          <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-            <h2 style="color: #0d9488;">New Contact Form Submission</h2>
-            <p><strong>Name:</strong> ${name}</p>
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
-            <p><strong>Message:</strong></p>
-            <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #0d9488;">
-              ${(message || '').replace(/\n/g, '<br/>')}
+      const emailPromises = recipients.map(recipient => 
+        resend.emails.send({
+          from: 'TEAMIND Contact <support@teamindprogram.com>',
+          to: [recipient],
+          replyTo: email, // Allow admin to reply directly to user
+          subject: `New Message from ${name}`,
+          html: `
+            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+              <h2 style="color: #0d9488;">New Contact Form Submission</h2>
+              <p><strong>Name:</strong> ${name}</p>
+              <p><strong>Email:</strong> ${email}</p>
+              <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
+              <p><strong>Message:</strong></p>
+              <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #0d9488;">
+                ${(message || '').replace(/\n/g, '<br/>')}
+              </div>
+              <div style="margin-top: 30px; font-size: 11px; color: #94a3b8; text-align: center; border-top: 1px solid #f1f5f9; padding-top: 10px;">
+                Notification sent specifically to: ${recipient}
+              </div>
             </div>
-          </div>
-        `,
-      });
+          `,
+        })
+      );
 
-      if (error) {
-        console.error(`[Vercel Contact] Resend error for admin:`, error);
-        results.admin.error = error;
-      } else {
+      const emailResults = await Promise.allSettled(emailPromises);
+      const isAnySuccess = emailResults.some(r => r.status === 'fulfilled' && !r.value.error);
+      
+      if (isAnySuccess) {
         results.admin.success = true;
-        results.admin.data = data;
+      } else {
+        const firstError = emailResults.find(r => r.status === 'rejected' || (r.status === 'fulfilled' && r.value.error));
+        results.admin.error = firstError;
       }
     }
 

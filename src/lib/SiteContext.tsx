@@ -114,52 +114,8 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
           try { localStorage.setItem('cached_site_config', JSON.stringify(data)); } catch (e) {}
         };
 
-        // 1. Initial Load from LocalStorage (Sync)
-        try {
-          const cachedConfig = localStorage.getItem('cached_site_config');
-          if (cachedConfig) {
-            const data = JSON.parse(cachedConfig);
-            processConfigData(data);
-          }
-        } catch (e) {
-          console.warn("Failed to load cached config");
-        }
-
-        // 2. Resolve Config
-        const configRef = doc(db, 'config', 'site');
-
-        if (isAdminPath) {
-          // Admin needs real-time
-          unsubConfig = onSnapshot(configRef, (snap) => {
-            if (snap.exists()) processConfigData(snap.data());
-            setLoading(false);
-          }, (err) => {
-            handleConfigError(err);
-            // If it's a quota error, we stop trying the realtime but keep the loading state finished
-            if (err.code === 'resource-exhausted') {
-              setLoading(false);
-            }
-          });
-        } else {
-          // Public users get one-time fetch to save quota
-          try {
-            const configSnap = await getDoc(configRef);
-            if (configSnap.exists()) processConfigData(configSnap.data());
-          } catch (err: any) {
-            if (err.code === 'resource-exhausted') {
-              console.warn("Quota exceeded for config fetch, using cache/defaults");
-            } else {
-              throw err;
-            }
-          }
-          setLoading(false);
-        }
-
-        // 3. Load Images
-        const imagesRef = collection(db, 'siteImages');
-        const processImagesData = (snap: any) => {
+        const processImagesData = (snap: any, timestamp?: string) => {
           const imagesData: any = {};
-          // Snapshot can be from getDocs (QuerySnapshot) or onSnapshot (QuerySnapshot)
           if (snap.forEach) {
             snap.forEach((doc: any) => {
               imagesData[doc.id] = doc.data().url;
@@ -168,27 +124,74 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           if (Object.keys(imagesData).length > 0) {
             setSiteImages({ ...FALLBACK_IMAGES, ...imagesData });
-            try { localStorage.setItem('cached_site_images', JSON.stringify(imagesData)); } catch (e) {}
+            try { 
+              localStorage.setItem('cached_site_images', JSON.stringify(imagesData));
+              if (timestamp) localStorage.setItem('cached_site_images_ts', timestamp);
+            } catch (e) {}
           }
         };
 
+        // 1. Initial Load from LocalStorage (Sync)
+        let cachedConfig: any = null;
+        try {
+          const raw = localStorage.getItem('cached_site_config');
+          if (raw) {
+            cachedConfig = JSON.parse(raw);
+            processConfigData(cachedConfig);
+          }
+        } catch (e) {}
+
+        const cachedImagesTs = localStorage.getItem('cached_site_images_ts');
+
+        // 2. Resolve Config
+        const configRef = doc(db, 'config', 'site');
+
         if (isAdminPath) {
+          unsubConfig = onSnapshot(configRef, (snap) => {
+            if (snap.exists()) processConfigData(snap.data());
+            setLoading(false);
+          }, (err) => {
+            handleConfigError(err);
+            if (err.code === 'resource-exhausted') setLoading(false);
+          });
+          
+          const imagesRef = collection(db, 'siteImages');
           unsubImages = onSnapshot(imagesRef, (snap) => {
             processImagesData(snap);
           }, (err) => {
             console.warn("Images realtime error:", err);
           });
         } else {
+          // PUBLIC PATH OPTIMIZATION: Only fetch what changed
           try {
-            const imagesSnap = await getDocs(imagesRef);
-            processImagesData(imagesSnap);
+            const configSnap = await getDoc(configRef);
+            if (configSnap.exists()) {
+              const remoteData = configSnap.data();
+              
+              // Only process config if it's actually newer or we don't have one
+              if (!cachedConfig || remoteData.lastUpdated !== cachedConfig.lastUpdated) {
+                processConfigData(remoteData);
+              }
+
+              // Only fetch images if timestamp changed or missing
+              const imagesRef = collection(db, 'siteImages');
+              if (!cachedImagesTs || remoteData.imagesLastUpdated !== cachedImagesTs) {
+                console.log("[SiteContext] Fetching images (Quota used)");
+                const imagesSnap = await getDocs(imagesRef);
+                processImagesData(imagesSnap, remoteData.imagesLastUpdated);
+              } else {
+                console.log("[SiteContext] Using cached images (Quota saved)");
+              }
+            }
           } catch (err: any) {
             if (err.code === 'resource-exhausted') {
-              console.warn("Quota exceeded for images fetch, using cache/fallback");
+              console.warn("Quota exceeded, using cache/defaults");
+            } else {
+              throw err;
             }
           }
+          setLoading(false);
         }
-
       } catch (err) {
         console.error("SiteContext Init Error:", err);
         setLoading(false);

@@ -26,6 +26,7 @@ if (!process.env.RESEND_API_KEY) {
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, doc, runTransaction, serverTimestamp, setDoc, collection, getDocs, getDoc } from 'firebase/firestore';
 import fs from 'fs';
+import { put } from '@vercel/blob';
 
 // Read config safely
 const firebaseConfig = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'firebase-applet-config.json'), 'utf8'));
@@ -172,6 +173,29 @@ async function startServer() {
         nodeEnv: process.env.NODE_ENV
       }
     });
+  });
+
+  // API Route: File Upload to Vercel Blob
+  app.post("/api/upload", async (req, res) => {
+    try {
+      const filename = req.query.filename as string;
+      const contentType = req.headers['content-type'] || 'application/octet-stream';
+      
+      if (!process.env.BLOB_READ_WRITE_TOKEN) {
+        throw new Error("BLOB_READ_WRITE_TOKEN is missing");
+      }
+
+      // Read stream from request
+      const blob = await put(filename || 'upload.bin', req, {
+        access: 'public',
+        contentType: contentType,
+      });
+
+      res.json(blob);
+    } catch (err: any) {
+      console.error("[Upload] Error:", err);
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // API Route: Contact Form
@@ -377,9 +401,12 @@ async function startServer() {
       zipCode: String(zipCode || '').trim(),
       address: `${String(street || '').trim()} ${String(houseNumber || '').trim()}, ${String(city || '').trim()}`,
       timestamp: new Date().toISOString(),
+      source_ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+      user_agent: req.headers['user-agent'] || 'unknown'
     };
 
-    console.log(`[MakePayment] Processing order ${orderId} for ${customer_name}. Amount: ${amount}`);
+    console.log(`[MakePayment] Processing order ${orderId} for ${resolvedName}. Amount: ${resolvedAmount}`);
+    console.log(`[MakePayment] Request from: ${payload.source_ip}`);
     console.log("[MakePayment] Payload:", JSON.stringify(payload));
 
     try {
@@ -526,42 +553,64 @@ async function startServer() {
     const orderDate = formatDateForEmail();
     const isHe = language === 'he';
 
+    const adminHtml = `
+      <div style="font-family: sans-serif; padding: 30px; border: 1px solid #eee; border-radius: 20px; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 10px; margin-bottom: 20px;">New Order Received!</h2>
+        <div style="margin: 20px 0;">
+          <p style="font-size: 18px;"><strong>Date:</strong> ${orderDate}</p>
+          <p style="font-size: 18px;"><strong>Order ID:</strong> <span dir="ltr">#${orderId}</span></p>
+          <p><strong>Program:</strong> ${program}</p>
+          <p><strong>Amount:</strong> ₪${amount}</p>
+        </div>
+        <div style="background: #f9fafb; padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+          <h3 style="margin-top: 0; color: #334155;">Customer Details</h3>
+          <p><strong>Name:</strong> ${customerName}</p>
+          <p><strong>Email:</strong> ${customerEmail}</p>
+          <p><strong>Phone:</strong> ${phone}</p>
+        </div>
+        ${shippingAddress ? `
+        <div style="background: #f0fdfa; padding: 20px; border-radius: 15px; border: 1px solid #ccfbf1;">
+          <h3 style="margin-top: 0; color: #0f766e;">Shipping Address</h3>
+          <p style="margin-bottom: 0;">
+            ${shippingAddress.street || ''} ${shippingAddress.houseNumber || ''}<br/>
+            ${shippingAddress.apartment ? `דירה ${shippingAddress.apartment}<br/>` : ''}
+            ${shippingAddress.city || ''}<br/>
+            ${shippingAddress.zipCode ? `מיקוד: ${shippingAddress.zipCode}` : ''}
+          </p>
+        </div>
+        ` : ''}
+      </div>
+    `;
+
     // --- DECOUPLED LOGIC: ADMINS ---
+    const getFriendlyName = (email: string) => {
+      const low = email.toLowerCase();
+      if (low.includes('budmantzvi')) return 'Tzvi (Admin)';
+      if (low.includes('zbibdmn')) return 'Zvi (Admin)';
+      return 'Admin';
+    };
+
     if ((orderNotifications === 'both' || orderNotifications === 'admin') && adminRecipients.length > 0) {
-      emailTasks.push(resend.emails.send({
-        from: `TEAMIND <${senderEmail}>`,
-        to: adminRecipients,
-        replyTo: normalizedCustomerEmail || undefined,
-        subject: `New Order #${orderId} - ${customerName}`,
-        html: `
-          <div style="font-family: sans-serif; padding: 30px; border: 1px solid #eee; border-radius: 20px; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 10px; margin-bottom: 20px;">New Order Received!</h2>
-            <div style="margin: 20px 0;">
-              <p style="font-size: 18px;"><strong>Date:</strong> ${orderDate}</p>
-              <p style="font-size: 18px;"><strong>Order ID:</strong> <span dir="ltr">#${orderId}</span></p>
-              <p><strong>Program:</strong> ${program}</p>
-              <p><strong>Amount:</strong> ₪${amount}</p>
-            </div>
-            <div style="background: #f9fafb; padding: 20px; border-radius: 15px; margin-bottom: 20px;">
-              <h3 style="margin-top: 0; color: #334155;">Customer Details</h3>
-              <p><strong>Name:</strong> ${customerName}</p>
-              <p><strong>Email:</strong> ${customerEmail}</p>
-              <p><strong>Phone:</strong> ${phone}</p>
-            </div>
-            ${shippingAddress ? `
-            <div style="background: #f0fdfa; padding: 20px; border-radius: 15px; border: 1px solid #ccfbf1;">
-              <h3 style="margin-top: 0; color: #0f766e;">Shipping Address</h3>
-              <p style="margin-bottom: 0;">
-                ${shippingAddress.street || ''} ${shippingAddress.houseNumber || ''}<br/>
-                ${shippingAddress.apartment ? `דירה ${shippingAddress.apartment}<br/>` : ''}
-                ${shippingAddress.city || ''}<br/>
-                ${shippingAddress.zipCode ? `מיקוד: ${shippingAddress.zipCode}` : ''}
-              </p>
-            </div>
-            ` : ''}
+      // Send individual emails to each admin so they see themselves in the "To" field
+      for (const recipient of adminRecipients) {
+        const friendlyName = getFriendlyName(recipient);
+        const toField = `${friendlyName} <${recipient}>`;
+        
+        const adminEmailWithInfo = `
+          ${adminHtml}
+          <div style="margin-top: 30px; font-size: 11px; color: #94a3b8; text-align: center; border-top: 1px solid #f1f5f9; padding-top: 10px;">
+            This notification was sent specifically to: ${recipient}
           </div>
-        `,
-      }));
+        `;
+
+        emailTasks.push(resend.emails.send({
+          from: `TEAMIND <${senderEmail}>`,
+          to: [toField], // Use array for single recipient to ensure correct header treatment
+          replyTo: normalizedCustomerEmail || undefined,
+          subject: `NEW ORDER #${orderId} - ${customerName}`,
+          html: adminEmailWithInfo
+        }));
+      }
     }
 
     // --- DECOUPLED LOGIC: CUSTOMER ---

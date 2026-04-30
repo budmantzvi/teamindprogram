@@ -6,12 +6,13 @@ export const safeSplit = (val: any, char: string = ' '): string[] => {
 };
 
 export const FALLBACK_IMAGES: any = {
-  hero: "/images/kit.jpg",
+  hero: "/hero.png",
   about: "/images/early-3.jpeg",
   kit: "/images/kit.jpg",
   founder1: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1976&auto=format&fit=crop",
   founder2: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=1961&auto=format&fit=crop",
   why: "/images/why-teamind.png",
+  videoThumbnail: "/images/why-teamind.png",
   
   // Early Childhood
   earlyHero: "/images/for_early_childhood.png",
@@ -47,8 +48,8 @@ export const FALLBACK_IMAGES: any = {
 
 export const DEFAULT_CONFIG: any = {
   contactEmail: 'support@teamindprogram.com', // Primary fallback
-  notificationAdmins: ['teamind50@gmail.com'], // Hardcoded safety defaults
-  allAdmins: ['teamind50@gmail.com'],
+  notificationAdmins: ['budmantzvi@gmail.com'], // Hardcoded safety defaults
+  allAdmins: ['budmantzvi@gmail.com'],
   contactPhone: '972504170209',
   tagline: 'Thinking, Emotions, Attention & Motivation IN Development',
   footerText: 'Empowering children through executive function development.',
@@ -106,12 +107,12 @@ export const DEFAULT_CONFIG: any = {
   charactersTitle: "Meet the Team.",
   charactersSubtitle: "The 5 core executive functions brought to life through friendly characters, led by Brainman.",
   charactersList: [
-    { name: "Brainman", role: "The Leader", desc: "Responsible for the human brain that controls all body functions, leading his wonderful team with wisdom." },
-    { name: "Driver Dan", role: "Focus & Shifting", desc: "Focuses and shifts attention, efficiently guiding calm and smooth transitions between activities." },
-    { name: "Lenny the Ladder", role: "Organization", desc: "A master of order and planning. Helps even the messiest learners approach and complete tasks efficiently." },
-    { name: "Memory Max", role: "Working Memory", desc: "He captures learning moments, helping remember daily and multi-step tasks through visual memory techniques." },
-    { name: "Molly the Mirror", role: "Emotional Reflection", desc: "Gentle and sensitive, she reflects internal and others' feelings to help build healthy relationships." },
-    { name: "Stopper Stan", role: "Response Inhibition", desc: "A balanced leader who controls reactions, helping to pause and reduce impulsive behaviors." },
+    { name: "Brainman", role: "The Leader", desc: "Responsible for the human brain that controls all body functions, leading his wonderful team with wisdom.", image: "/images/brainman.png" },
+    { name: "Driver Dan", role: "Focus & Shifting", desc: "Focuses and shifts attention, efficiently guiding calm and smooth transitions between activities.", image: "/images/driver dan.png" },
+    { name: "Lenny the Ladder", role: "Organization", desc: "A master of order and planning. Helps even the messiest learners approach and complete tasks efficiently.", image: "/images/lenny the ladder.png" },
+    { name: "Memory Max", role: "Working Memory", desc: "He captures learning moments, helping remember daily and multi-step tasks through visual memory techniques.", image: "/images/memory max.png" },
+    { name: "Molly the Mirror", role: "Emotional Reflection", desc: "Gentle and sensitive, she reflects internal and others' feelings to help build healthy relationships.", image: "/images/molly the mirror.png" },
+    { name: "Stopper Stan", role: "Response Inhibition", desc: "A balanced leader who controls reactions, helping to pause and reduce impulsive behaviors.", image: "/images/stopper stan.png" },
   ],
   kitPrice: 2300,
   emailNotifications: 'both',
@@ -214,12 +215,12 @@ export const DEFAULT_CONFIG: any = {
   videoTitle_he: 'למידה רגשית-חברתית. מבוססת דמויות.',
   videoSubtitle_he: 'גלו כיצד TEAMIND הופכת מושגי מיומנויות ניהוליות מופשטים לכלים מוחשיים ובלתי נשכחים עבור ילדים.',
   charactersList_he: [
-    { name: "אדון מוחון", role: "המנהיג", desc: "אחראי על המוח האנושי השולט בכל תפקודי הגוף, מוביל את הצוות הנפלא שלו בחוכמה." },
-    { name: "מיסטר הגה", role: "מיקוד והסטה", desc: "מתמקד ומסיט קשב, מכוון ביעילות למעברים רגועים וחלקים בין פעילויות." },
-    { name: "סולמי", role: "ארגון", desc: "מאסטר של סדר ותכנון. עוזר גם ללומדים המבולבלים ביותר לגשת למשימות ולהשלים אותן ביעילות." },
-    { name: "מוני מצלמוני", role: "זיכרון עבודה", desc: "היא מצלמת וקולטת רגעי למידה, עוזרת לזכור משימות יומיות ומשימות מרובות שלבים באמצעות טכניקות זיכרון חזותיות." },
-    { name: "ליבי המראה", role: "שיקוף רגשי", desc: "עדינה ורגישה, היא משקפת וקולטת רגשות פנימיים ושל אחרים כדי לעזור בבניית מערכות יחסים בריאות." },
-    { name: "תום התמרור", role: "עיכוב תגובה", desc: "מנהיג מאוזן השולט בתגובות, עוזר לעצור ולהפחית התנהגויות אימפולסיביות." },
+    { name: "אדון מוחון", role: "המנהיג", desc: "אחראי על המוח האנושי השולט בכל תפקודי הגוף, מוביל את הצוות הנפלא שלו בחוכמה.", image: "/images/brainman.png" },
+    { name: "מיסטר הגה", role: "מיקוד והסטה", desc: "מתמקד ומסיט קשב, מכוון ביעילות למעברים רגועים וחלקים בין פעילויות.", image: "/images/driver dan.png" },
+    { name: "סולמי", role: "ארגון", desc: "מאסטר של סדר ותכנון. עוזר גם ללומדים המבולבלים ביותר לגשת למשימות ולהשלים אותן ביעילות.", image: "/images/lenny the ladder.png" },
+    { name: "מוני מצלמוני", role: "זיכרון עבודה", desc: "הוא מצלם וקולט רגעי למידה, עוזר לזכור משימות יומיות ומשימות מרובות שלבים באמצעות טכניקות זיכרון חזותיות.", image: "/images/memory max.png" },
+    { name: "ליבי המראה", role: "שיקוף רגשי", desc: "עדינה ורגישה, היא משקפת וקולטת רגשות פנימיים ושל אחרים כדי לעזור בבניית מערכות יחסים בריאות.", image: "/images/molly the mirror.png" },
+    { name: "תום התמרור", role: "עיכוב תגובה", desc: "מנהיג מאוזן השולט בתגובות, עוזר לעצור ולהפחית התנהגויות אימפולסיביות (Stopper Stan).", image: "/images/stopper stan.png" },
   ],
   whyCards_he: [
     { title: "הצלחה אקדמית", desc: "מיומנויות ניהוליות חזקות הן מנבאות טובות יותר להצלחה אקדמית מאשר IQ.", icon: "Award" },
@@ -257,6 +258,108 @@ export const DEFAULT_CONFIG: any = {
     { name: "מיה ב.", role: "אמא", text: "לפני TEAMIND, הבן שלי התקשה במעברים. עכשיו, רק הזכרת 'מיסטר הגה' עוזרת לו להתכונן לפעילות הבאה עם חיוך.", image: "https://i.pravatar.cc/150?u=mayab" },
     { name: "נועם ג.", role: "יועץ חינוכי", text: "חובה לכל בית ספר. זה נותן לילדים את השפה שהם צריכים כדי לתאר את המצב הקוגניטיבי הפנימי שלהם.", image: "https://i.pravatar.cc/150?u=noam" },
   ],
+  privacyPolicyHtml: `
+    <h2>Introduction</h2>
+    <p>Welcome to TEAMIND. We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you visit our website and use our services.</p>
+    
+    <h2>Information We Collect</h2>
+    <p>We value your privacy and aim to collect only the minimum amount of information necessary to provide our services. We collect:</p>
+    <ul>
+      <li><strong>Full Name:</strong> Your name and email address when you choose to submit them via our contact form or during the checkout process.</li>
+      <li><strong>Shipping Address:</strong> Your physical address for the delivery of pedagogical kits.</li>
+      <li><strong>Payment Info:</strong> All payments are processed through Meshulam. We do not store your credit card details on our servers.</li>
+    </ul>
+
+    <h2>How We Use Your Information</h2>
+    <p>We use the information we collect to:</p>
+    <ul>
+      <li>Process your orders and deliver your kits.</li>
+      <li>Respond to your inquiries and provide customer support.</li>
+      <li>Send you important updates regarding your purchase.</li>
+    </ul>
+
+    <h2>Security of Your Information</h2>
+    <p>We implement appropriate technical and organizational security measures to protect the security of any personal information we process. However, please also remember that we cannot guarantee that the internet itself is 100% secure.</p>
+
+    <h2>Third-Party Services</h2>
+    <p>We use Meshulam for payment processing and automation. We also use Firebase for data storage. We do not sell or share your personal information with any other third parties for marketing purposes.</p>
+
+    <h2>Contact Us</h2>
+    <p>If you have questions or comments about this policy, you may email us at support@teamindprogram.com.</p>
+  `,
+  privacyPolicyHtml_he: `
+    <h2>מבוא</h2>
+    <p>ברוכים הבאים ל-TEAMIND. אנו מחויבים להגן על המידע האישי שלך ועל זכותך לפרטיות. מדיניות פרטיות זו מסבירה כיצד אנו אוספים, משתמשים ומגינים על המידע שלך כאשר אתה מבקר באתר האינטרנט שלנו ומשתמש בשירותים שלנו.</p>
+    
+    <h2>מידע שאנו אוספים</h2>
+    <p>אנו מעריכים את פרטיותך ושואפים לאסוף רק את כמות המידע המינימלית הדרושה לאספקת השירותים שלנו. אנו אוספים:</p>
+    <ul>
+      <li><strong>שם מלא:</strong> שמך וכתובת האימייל שלך כאשר אתה בוחר לשלוח אותם דרך טופס יצירת הקשר שלנו או במהלך תהליך התשלום.</li>
+      <li><strong>כתובת למשלוח:</strong> הכתובת הפיזית שלך לאספקת הערכות הפדגוגיות.</li>
+      <li><strong>פרטי תשלום:</strong> כל התשלומים מעובדים באמצעות "משולם". איננו שומרים את פרטי כרטיס האשראי שלך בשרתים שלנו.</li>
+    </ul>
+
+    <h2>כיצד אנו משתמשים במידע שלך</h2>
+    <p>אנו משתמשים במידע שאנו אוספים כדי:</p>
+    <ul>
+      <li>לעבד את ההזמנות שלך ולספק את הערכות שלך.</li>
+      <li>להגיב לפניותיך ולתת תמיכת לקוחות.</li>
+      <li>לשלוח לך עדכונים חשובים בנוגע לרכישתך.</li>
+    </ul>
+
+    <h2>אבטחת המידע שלך</h2>
+    <p>אנו מיישמים אמצעי אבטחה טכניים וארגוניים מתאימים כדי להגן על אבטחת כל מידע אישי שאנו מעבדים. עם זאת, אנא זכור גם כי איננו יכולים להבטיח שהאינטרנט עצמו מאובטח ב-100%.</p>
+
+    <h2>שירותי צד שלישי</h2>
+    <p>אנו משתמשים ב"משולם" לצורך עיבוד תשלומים ואוטומציה. אנו משתמשים גם ב-Firebase לאחסון נתונים. איננו מוכרים או משתפים את המידע האישי שלך עם צדדים שלישיים אחרים למטרות שיווק.</p>
+
+    <h2>צרו קשר</h2>
+    <p>אם יש לך שאלות או הערות לגבי מדיניות זו, תוכל לשלוח לנו דוא"ל לכתובת support@teamindprogram.com.</p>
+  `,
+  termsOfServiceHtml: `
+    <h2>Agreement to Terms</h2>
+    <p>By accessing or using the TEAMIND website and services, you agree to be bound by these Terms of Service. If you do not agree to all of these terms, do not use our services.</p>
+
+    <h2>Use of Services</h2>
+    <p>You agree to use our services only for lawful purposes and in accordance with these Terms. You are responsible for ensuring that all persons who access the services through your internet connection are aware of these Terms and comply with them.</p>
+
+    <h2>Intellectual Property</h2>
+    <p>The TEAMIND program, including its characters (Brainman, Molly the Mirror, etc.), stories, songs, and educational materials, are the intellectual property of TEAMIND. You may not reproduce, distribute, or create derivative works from our materials without explicit written permission.</p>
+
+    <h2>Purchase and Payment</h2>
+    <p>All purchases are processed through Meshulam. By providing your payment information, you represent and warrant that you have the legal right to use the payment method. We reserve the right to refuse or cancel any order for any reason.</p>
+
+    <h2>Limitation of Liability</h2>
+    <p>In no event shall TEAMIND be liable for any indirect, incidental, special, consequential, or punitive damages arising out of or in connection with your use of our services or products.</p>
+
+    <h2>Governing Law</h2>
+    <p>These Terms shall be governed by and construed in accordance with the laws of the jurisdiction in which TEAMIND operates, without regard to its conflict of law provisions.</p>
+
+    <h2>Changes to Terms</h2>
+    <p>We reserve the right to modify these Terms at any time. We will notify you of any changes by posting the new Terms on this page. Your continued use of the services after such changes constitutes your acceptance of the new Terms.</p>
+  `,
+  termsOfServiceHtml_he: `
+    <h2>הסכמה לתנאים</h2>
+    <p>על ידי גישה או שימוש באתר ובשירותים של TEAMIND, אתה מסכים להיות כפוף לתנאי שימוש אלה. אם אינך מסכים לכל התנאים הללו, אל תשתמש בשירותים שלנו.</p>
+
+    <h2>השימוש בשירותים</h2>
+    <p>אתה מסכים להשתמש בשירותים שלנו רק למטרות חוקיות ובהתאם לתנאים אלו. אתה אחראי לוודא שכל האנשים הניגשים לשירותים דרך חיבור האינטרנט שלך מודעים לתנאים אלה ומצייתים להם.</p>
+
+    <h2>קניין רוחני</h2>
+    <p>תוכנית TEAMIND, כולל הדמויות שלה (אדון מוחון, ליבי המראה וכו'), סיפורים, שירים וחומרים חינוכיים, הם הקניין הרוחני של TEAMIND. אין לשכפל, להפיץ או ליצור יצירות נגזרות מהחומרים שלנו ללא רשות מפורשת בכתב.</p>
+
+    <h2>רכישה ותשלום</h2>
+    <p>כל הרכישות מעובדות באמצעות "משולם". על ידי מסירת פרטי התשלום שלך, אתה מצהיר ומתחייב כי יש לך את הזכות המשפטית להשתמש באמצעי התשלום. אנו שומרים לעצמנו את הזכות לסרב או לבטל כל הזמנה מכל סיבה שהיא.</p>
+
+    <h2>הגבלת אחריות</h2>
+    <p>בשום מקרה TEAMIND לא תהיה אחראית לכל נזק עקיף, מקרי, מיוחד, תוצאתי או עונשי הנובע משימושך בשירותים או במוצרים שלנו או בקשר אליו.</p>
+
+    <h2>החוק החל</h2>
+    <p>תנאים אלו יהיו כפופים לחוקי המדינה בה פועלת TEAMIND ויפורשו בהתאם להם, ללא התחשבות בהוראות ניגוד חוקים.</p>
+
+    <h2>שינויים בתנאים</h2>
+    <p>אנו שומרים לעצמנו את הזכות לשנות תנאים אלה בכל עת. אנו נודיע לך על כל שינוי על ידי פרסום התנאים החדשים בדף זה. המשך השימוש שלך בשירותים לאחר שינויים כאלה מהווה את הסכמתך לתנאים החדשים.</p>
+  `,
   foundersMembers_he: [
     {
       name: "ד\"ר ג'ניפר בדמן",
@@ -404,16 +507,26 @@ export const migrateConfig = (config: any) => {
   if (isOldContent(migrated.aboutSubtext, oldAboutSubtext, 350)) {
     migrated.aboutSubtext = DEFAULT_CONFIG.aboutSubtext;
   }
-  if (migrated.charactersList) {
-    migrated.charactersList = migrated.charactersList.map((char: any) => 
-      char.name === "Stoper Stan" ? { ...char, name: "Stopper Stan" } : char
-    );
+
+  // 3. Spelling fixes
+  const fixSpelling = (text: string) => {
+    if (!text) return text;
+    return text.replace(/Stoper Stan/gi, 'Stopper Stan')
+               .replace(/stoper stan/gi, 'Stopper Stan');
+  };
+
+  if (Array.isArray(migrated.charactersList)) {
+    migrated.charactersList = migrated.charactersList.map((c: any) => ({
+      ...c,
+      name: fixSpelling(c.name)
+    }));
   }
-  if (char.name === "Memory Max") {
-        return {
-          ...char,
-          desc: "She captures and preserves learning moments, helping children remember daily and multi-step tasks through visual memory techniques."
-        };
-      }
+  if (Array.isArray(migrated.charactersList_he)) {
+    migrated.charactersList_he = migrated.charactersList_he.map((c: any) => ({
+      ...c,
+      desc: fixSpelling(c.desc)
+    }));
+  }
+
   return migrated;
 };

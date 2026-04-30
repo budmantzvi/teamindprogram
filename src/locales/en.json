@@ -183,9 +183,10 @@
     "proceed": "Proceed to Payment",
     "securePayment": "Secure payment processed via our partner. You will be redirected to complete the transaction.",
     "israelOnly": "Note: Delivery is currently available in Israel only.",
-    "egTelAviv": "e.g. Denver",
-    "egHerzl": "e.g. Pine Drive",
+    "egTelAviv": "e.g. Tel Aviv",
+    "egHerzl": "e.g. Herzl",
     "nameRequired": "Full name is required",
+    "fullNameRequired": "Please enter your full name (First and Last name)",
     "emailRequired": "Email is required",
     "invalidEmail": "Invalid email format",
     "phoneRequired": "Phone is required",
@@ -237,5 +238,27 @@
     "liability": "5. Limitation of Liability",
     "law": "6. Governing Law",
     "terms_changes": "7. Changes to Terms"
+  },
+  "seo": {
+    "home": {
+      "title": "TEAMIND - Executive Functions & Learning Skills Development",
+      "description": "TEAMIND is a character-based program to strengthen children’s executive functions through music, play, and emotional connection. Discover our leading pedagogical kits."
+    },
+    "about": {
+      "title": "About TEAMIND | Research-Based Cognitive Development",
+      "description": "Meet the founders and discover the vision behind TEAMIND. A holistic solution for early childhood and elementary education based on executive function development."
+    },
+    "earlyChildhood": {
+      "title": "TEAMIND for Early Childhood - School Readiness & Emotional Education",
+      "description": "Strengthening learning skills and executive functions in preschools. Implementing a shared language for self-regulation and emotional expression."
+    },
+    "elementary": {
+      "title": "TEAMIND for Elementary School - Improving Classroom Behavior",
+      "description": "A structured program to improve focus, responsibility, and independence in elementary students. 24 executive-function-based lesson plans."
+    },
+    "parents": {
+      "title": "TEAMIND for Parents - Building Learning Skills at Home",
+      "description": "Bring TEAMIND home. Activity kits for cognitive development, self-confidence, and emotional intelligence in children."
+    }
   }
 }

@@ -74,38 +74,39 @@ export default function Parents() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#fdfbf7] text-slate-900 font-sans selection:bg-brand-pink/30 selection:text-brand-pink pt-32 md:pt-40">
+    <div className="min-h-screen bg-[#fdfbf7] text-slate-900 font-sans selection:bg-brand-pink/30 selection:text-brand-pink pt-32 md:pt-48 overflow-x-hidden">
       <SEO 
         title={t('programs.parents')} 
         description={pageData.subtitle}
         keywords="הדרכת הורים, עבודה עם ילדים בבית, ערכת הורים, מיומנויות לבית, Parenting tools, Homework skills, Home executive functions, חינוך מהבית, פיתוח הילד, טיפים להורים"
       />
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-6 mb-24 overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <section className="max-w-[1440px] mx-auto px-6 md:px-12 mb-24 overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
           <motion.div 
-            initial={{ opacity: 0, x: isHe ? 20 : -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-8 text-start"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="space-y-10 text-center lg:text-start order-2 lg:order-1"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-brand-pink/10 text-brand-pink rounded-full text-xs font-bold uppercase tracking-widest leading-none">
+            <div className="inline-flex items-center gap-2 px-6 py-2 bg-white border border-slate-100 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-brand-green-tech shadow-sm mx-auto lg:mx-0">
               <Sparkles className="w-4 h-4 shrink-0" />
               <span>{t('programs.family')}</span>
             </div>
-            <h1 className="text-5xl md:text-7xl font-serif font-bold tracking-tight leading-tight">
+            <h1 className="text-[40px] md:text-6xl lg:text-7xl font-serif font-medium tracking-tighter leading-[0.9]">
               {safeSplit(pageData.title, ' ').map((word: string, i: number, arr: string[]) => (
-                <span key={i} className={i === arr.length - 1 ? "text-brand-pink italic" : ""}>
-                  {word}{' '}
+                <span key={i} className={`block ${i === arr.length - 1 ? "text-brand-green-tech italic" : ""}`}>
+                  {word}
                 </span>
               ))}
             </h1>
-            <p className="text-lg md:text-xl text-slate-600 leading-relaxed font-medium">
+            <p className="text-xl text-slate-600 leading-relaxed font-medium max-w-2xl mx-auto lg:mx-0">
               {pageData.subtitle}
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Link to={`${prefix}/checkout?program=Family+Kit`} className="px-10 py-5 bg-brand-pink text-white font-bold rounded-full text-lg hover:bg-brand-pink/90 transition-all hover:scale-105 shadow-xl shadow-brand-pink/20 flex items-center justify-center gap-2">
+            <div className="flex flex-col sm:flex-row gap-4 pt-6 justify-center lg:justify-start">
+              <Link to={`${prefix}/checkout?program=Family+Kit`} className="btn-primary bg-brand-pink shadow-brand-pink/20">
                 {t('programs.getKit')}
-                <ArrowRight className={`w-5 h-5 ${isHe ? 'rotate-180' : ''}`} />
+                <ArrowRight className={`w-6 h-6 ${isHe ? 'rotate-180' : ''}`} />
               </Link>
             </div>
           </motion.div>
@@ -113,80 +114,87 @@ export default function Parents() {
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative"
+            transition={{ duration: 1, delay: 0.2 }}
+            className="relative order-1 lg:order-2 max-w-[500px] mx-auto lg:max-w-none w-full"
           >
-            <div className="aspect-square rounded-[64px] overflow-hidden shadow-2xl border-8 border-white bg-slate-50">
+            <div className="aspect-square rounded-[80px] overflow-hidden shadow-3xl shadow-brand-pink/20 border-[12px] border-white bg-white">
               <img 
                 src={heroImage} 
                 alt="Family Program" 
-                className={`w-full h-full object-cover transition-opacity duration-500 ${heroImage ? 'opacity-100' : 'opacity-0'}`}
+                className={`w-full h-full object-cover transition-opacity duration-700 ${heroImage ? 'opacity-100' : 'opacity-0'}`}
                 referrerPolicy="no-referrer"
                 loading="eager"
-                fetchPriority="high"
-                decoding="async"
               />
             </div>
-            <div className="absolute -bottom-8 -inline-start-8 w-48 h-48 bg-yellow-100 rounded-[40px] -z-10" />
           </motion.div>
         </div>
       </section>
 
       {/* Program Details */}
-      <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="max-w-3xl mb-20 text-start">
-            <h2 className="text-4xl font-serif font-bold mb-8">{pageData.detailsTitle}</h2>
-            <p className="text-xl text-slate-600 leading-relaxed font-medium">
+      <section className="py-20 md:py-24 bg-white">
+        <div className="max-w-[1440px] mx-auto px-6 md:px-12">
+          <div className="max-w-3xl mb-20 text-center lg:text-start mx-auto lg:mx-0">
+            <h2 className="text-[32px] md:text-4xl lg:text-5xl font-serif font-bold mb-10 tracking-tighter">{pageData.detailsTitle}</h2>
+            <p className="text-xl text-slate-500 leading-relaxed font-medium">
               {pageData.description}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-start">
-            {detailItems.map((item, i) => (
-              <div key={i} className="p-10 bg-slate-50 rounded-[48px] border border-slate-100 hover:border-brand-pink/30 transition-colors group">
-                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-brand-pink shadow-sm mb-6 group-hover:scale-110 transition-transform">
-                  <item.icon className="w-7 h-7" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
+            {detailItems.map((item, i) => {
+              const palette = ['text-brand-light-blue', 'text-brand-red', 'text-brand-orange', 'text-brand-pink', 'text-brand-yellow', 'text-brand-green'];
+              const colorClass = palette[i % palette.length];
+              return (
+                <div key={i} className={`p-12 md:p-14 bg-slate-50 rounded-[48px] border border-slate-100 hover:border-brand-light-blue/30 hover:shadow-2xl transition-all group text-center lg:text-start`}>
+                  <div className={`w-16 h-16 bg-white rounded-2xl flex items-center justify-center ${colorClass} shadow-md mb-10 mx-auto lg:mx-0 group-hover:scale-110 transition-transform`}>
+                    <item.icon className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-2xl md:text-3xl font-bold mb-6 tracking-tight">{item.title}</h3>
+                  <p className="text-slate-500 font-medium leading-relaxed">{item.desc}</p>
                 </div>
-                <h3 className="text-2xl font-serif font-bold mb-4">{item.title}</h3>
-                <p className="text-slate-600 font-medium leading-relaxed">{item.desc}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* The Family Kit Section */}
-      <section className="py-24 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-6">
+      <section className="py-24 md:py-32 bg-slate-50">
+        <div className="max-w-[1440px] mx-auto px-6 md:px-12">
           <div className="text-center max-w-3xl mx-auto mb-20">
-            <h2 className="text-4xl md:text-6xl font-serif font-bold mb-8">{safeSplit(pageData.kitTitle, '.').map((part: string, i: number) => i === 0 ? part : <span key={i} className="text-brand-orange italic">.{part}</span>)}</h2>
-            <p className="text-lg text-slate-600 font-medium">{pageData.kitSubtitle}</p>
+            <h2 className="text-[32px] md:text-7xl font-sans font-bold mb-8 tracking-tighter leading-tight">
+              {safeSplit(pageData.kitTitle, '.').map((part: string, i: number) => (
+                <span key={i} className={i !== 0 ? "text-brand-orange italic block" : "block"}>
+                  {part}
+                </span>
+              ))}
+            </h2>
+            <p className="text-xl text-slate-500 font-medium leading-relaxed">{pageData.kitSubtitle}</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 order-2 lg:order-1">
               {kitItems.map((item, i) => (
-                <div key={i} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex items-start gap-4">
-                  <div className="w-10 h-10 bg-brand-orange/10 rounded-xl flex items-center justify-center text-brand-orange shrink-0">
-                    <item.icon className="w-5 h-5" />
+                <div key={i} className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm flex items-start gap-6 text-start hover:shadow-xl transition-all">
+                  <div className="w-12 h-12 bg-brand-orange/10 rounded-2xl flex items-center justify-center text-brand-orange shrink-0">
+                    <item.icon className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-slate-900">{item.title}</h4>
-                    <p className="text-xs text-slate-500 font-medium">{item.desc}</p>
+                    <h4 className="text-lg font-bold text-slate-900 mb-1">{item.title}</h4>
+                    <p className="text-sm text-slate-500 font-medium leading-relaxed">{item.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="relative">
-              <div className="aspect-square rounded-[64px] overflow-hidden shadow-2xl border-8 border-white bg-slate-50">
+            <div className="relative order-1 lg:order-2 max-w-[500px] mx-auto lg:max-w-none w-full">
+              <div className="aspect-square rounded-[80px] overflow-hidden shadow-3xl border-[12px] border-white bg-white">
                 <img 
                   src={kitImage} 
                   alt="Family Kit" 
-                  className={`w-full h-full object-cover transition-opacity duration-500 ${kitImage ? 'opacity-100' : 'opacity-0'}`}
+                  className={`w-full h-full object-cover transition-opacity duration-1000 ${kitImage ? 'opacity-100' : 'opacity-0'}`}
                   referrerPolicy="no-referrer"
                   loading="lazy"
-                  decoding="async"
                 />
               </div>
             </div>
@@ -195,15 +203,17 @@ export default function Parents() {
       </section>
 
       {/* Gallery Section */}
-      <section className="py-24 bg-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-4xl font-serif font-bold mb-16 text-center">{t('nav.programs')} <span className="text-brand-yellow italic">{t('programs.gallery')}</span></h2>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <section className="py-24 md:py-32 bg-white overflow-hidden">
+        <div className="max-w-[1440px] mx-auto px-6 md:px-12">
+          <h2 className="text-[32px] md:text-6xl font-sans font-bold mb-20 text-center tracking-tighter">
+            {t('nav.programs')} <span className="text-brand-yellow italic"> {t('programs.gallery')}</span>
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {displayGallery.map((img, i) => (
               <motion.div 
                 key={i}
-                whileHover={{ scale: 1.05 }}
-                className="aspect-square rounded-[32px] overflow-hidden bg-slate-100 shadow-lg"
+                whileHover={{ scale: 1.02 }}
+                className="aspect-square rounded-[40px] overflow-hidden bg-slate-50 shadow-lg border-4 border-white"
               >
                 <img 
                   src={img} 
@@ -211,7 +221,6 @@ export default function Parents() {
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                   loading="lazy"
-                  decoding="async"
                 />
               </motion.div>
             ))}
@@ -220,16 +229,18 @@ export default function Parents() {
       </section>
 
       {/* Tips for Parents */}
-      <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="bg-brand-orange/10 rounded-[64px] p-12 md:p-20 border border-brand-orange/20">
-            <h2 className="text-4xl font-serif font-bold mb-12 text-center">{t('programs.tipsTitle')} <span className="text-brand-orange italic">{t('programs.parents')}</span></h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+      <section className="py-24 md:py-32 bg-white">
+        <div className="max-w-[1440px] mx-auto px-6 md:px-12">
+          <div className="bg-brand-orange/5 rounded-[80px] p-12 md:p-24 border border-brand-orange/10">
+            <h2 className="text-[32px] md:text-6xl font-sans font-bold mb-16 text-center tracking-tighter leading-none">
+              {t('programs.tipsTitle')} <span className="text-brand-orange italic block md:inline">{t('programs.parents')}</span>
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-16">
               {parentTips.map((tip, i) => (
-                <div key={i} className="space-y-4 text-start">
-                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-brand-orange shadow-sm font-bold text-xl">{tip.num}</div>
-                  <h4 className="text-xl font-serif font-bold">{tip.title}</h4>
-                  <p className="text-slate-600 font-medium leading-relaxed">{tip.desc}</p>
+                <div key={i} className="space-y-6 text-center md:text-start">
+                  <div className="w-16 h-16 bg-white rounded-[24px] flex items-center justify-center text-brand-orange shadow-md font-bold text-2xl mx-auto md:mx-0">{tip.num}</div>
+                  <h4 className="text-2xl font-bold tracking-tight">{tip.title}</h4>
+                  <p className="text-lg text-slate-500 font-medium leading-relaxed">{tip.desc}</p>
                 </div>
               ))}
             </div>
@@ -238,24 +249,30 @@ export default function Parents() {
       </section>
 
       {/* Pricing Section */}
-      <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="bg-brand-green/10 rounded-[64px] p-12 md:p-20 text-slate-900 overflow-hidden relative border border-brand-green/20">
-            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-              <div className="space-y-8 text-start">
-                <h2 className="text-4xl md:text-6xl font-serif font-bold">{safeSplit(pageData.investTitle, '.').map((part: string, i: number) => i === 0 ? part : <span key={i} className="text-brand-green italic">.{part}</span>)}</h2>
-                <p className="text-xl text-slate-600 font-medium leading-relaxed">
+      <section className="py-24 md:py-32 bg-white">
+        <div className="max-w-[1440px] mx-auto px-6 md:px-12">
+          <div className="bg-brand-green/5 rounded-[80px] p-12 md:p-24 text-slate-900 border border-brand-green/10 relative overflow-hidden">
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+              <div className="space-y-10 text-center lg:text-start">
+                <h2 className="text-[40px] md:text-7xl font-sans font-bold tracking-tighter leading-none">
+                  {safeSplit(pageData.investTitle, '.').map((part: string, i: number) => (
+                    <span key={i} className={`block ${i !== 0 ? "text-brand-green italic" : ""}`}>
+                      {part}
+                    </span>
+                  ))}
+                </h2>
+                <p className="text-xl text-slate-500 font-medium leading-relaxed max-w-xl mx-auto lg:mx-0">
                   {pageData.investSubtitle}
                 </p>
               </div>
-              <div className="bg-white border border-brand-green/20 rounded-[48px] p-12 text-center space-y-8 shadow-xl shadow-brand-green/5">
-                <div className="space-y-2">
-                  <p className="text-brand-green font-black uppercase tracking-widest text-sm">{t('programs.complete_family_kit')}</p>
-                  <p className="text-slate-400 font-bold">{t('programs.all_inclusive')}</p>
+              <div className="bg-white border border-brand-green/10 rounded-[60px] p-8 md:p-16 text-center space-y-8 md:space-y-10 shadow-3xl shadow-brand-green/5">
+                <div className="space-y-4">
+                  <p className="inline-block px-5 py-2 bg-brand-green/10 text-brand-green font-bold uppercase tracking-[0.2em] text-[10px] rounded-full">{t('programs.complete_family_kit')}</p>
+                  <p className="text-slate-400 font-bold tracking-tight text-sm md:text-base">{t('programs.all_inclusive')}</p>
                 </div>
-                <Link to={`${prefix}/checkout?program=Family+Kit`} className="w-full py-5 bg-brand-green text-white font-black rounded-full text-xl hover:bg-brand-green/90 transition-all shadow-2xl shadow-brand-green/20 flex items-center justify-center gap-3">
-                  {t('programs.purchase')}
-                  <ArrowRight className={`w-6 h-6 ${isHe ? 'rotate-180' : ''}`} />
+                <Link to={`${prefix}/checkout?program=Family+Kit`} className="btn-primary w-full h-16 md:h-20 text-lg md:text-xl bg-brand-green shadow-brand-green/20 hover:scale-[1.02] active:scale-95">
+                  <span className="whitespace-nowrap">{t('programs.purchase')}</span>
+                  <ArrowRight className={`w-6 h-6 md:w-8 md:h-8 ${isHe ? 'rotate-180' : ''}`} />
                 </Link>
               </div>
             </div>
@@ -264,15 +281,19 @@ export default function Parents() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 bg-brand-orange text-white">
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <h2 className="text-4xl md:text-6xl font-serif font-bold mb-8">{t('programs.ready')}</h2>
-          <p className="text-xl text-brand-orange/10 mb-12 max-w-2xl mx-auto font-medium">
+      <section className="py-24 md:py-32 bg-brand-orange text-white overflow-hidden relative">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full blur-[120px] translate-x-1/2 translate-y-1/2" />
+        </div>
+        <div className="max-w-5xl mx-auto px-6 text-center relative z-10">
+          <h2 className="text-[40px] md:text-8xl font-sans font-bold mb-10 tracking-tighter leading-none">{t('programs.ready')}</h2>
+          <p className="text-xl md:text-2xl text-white/80 mb-16 max-w-2xl mx-auto font-medium leading-relaxed">
             {t('programs.join')}
           </p>
-          <Link to={`${prefix}/#contact`} className="inline-flex items-center gap-2 px-10 py-5 bg-white text-brand-orange font-bold rounded-full text-lg hover:bg-slate-100 hover:scale-105 transition-all shadow-2xl">
+          <Link to={`${prefix}/#contact`} className="inline-flex items-center gap-4 px-10 py-4 lg:px-12 lg:py-6 bg-white text-brand-orange font-bold md:font-semibold rounded-full text-lg lg:text-xl hover:bg-slate-50 transition-all shadow-3xl hover:-translate-y-1 active:scale-95">
             {t('programs.contact')}
-            <ArrowRight className={`w-5 h-5 ${isHe ? 'rotate-180' : ''}`} />
+            <ArrowRight className={`w-7 h-7 ${isHe ? 'rotate-180' : ''}`} />
           </Link>
         </div>
       </section>

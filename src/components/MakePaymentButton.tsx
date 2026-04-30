@@ -58,24 +58,11 @@ export const MakePaymentButton: React.FC<MakePaymentButtonProps> = ({
         throw new Error("Invalid payment amount. Please refresh the page and try again.");
       }
 
-      // Geolocation check
-      try {
-        console.log("Starting geolocation check...");
-        const geoRes = await fetch('https://ipapi.co/json/');
-        const geoData = await geoRes.json();
-        if (geoData.country_code && geoData.country_code !== 'IL') {
-          toast.error(t('footer.unavailable'));
-          setIsLoading(false);
-          return;
-        }
-      } catch (geoErr) {
-        console.warn("Geo check failed, proceeding with caution:", geoErr);
-      }
-
       // 1. Generate a unique Order ID
       const orderId = 'ORD-' + Math.random().toString(36).substring(2, 9).toUpperCase();
       localStorage.setItem('last_order_id', orderId);
       
+      console.log(`[Payment] Initiating order: ${orderId} for ${customerName}`);
       let sanitizedPhone = phone.replace(/\D/g, '');
       if (sanitizedPhone.startsWith('972')) {
         sanitizedPhone = '0' + sanitizedPhone.slice(3);

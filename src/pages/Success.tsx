@@ -14,17 +14,58 @@ const SuccessPage = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
 
-  const isHe = i18n.language === 'he';
-  // Use location check to ensure we are in the right route context
   const isOnHebrewPath = location.pathname.startsWith('/he');
+  const isHe = i18n.language === 'he';
   
-  const prefix = isOnHebrewPath ? '/he' : '';
+  // Decide prefix based on both current path and detected language preference
+  const prefix = (isOnHebrewPath || isHe) ? '/he' : '';
   const hasProcessed = useRef(false);
 
   // Try to get orderId from URL, then localStorage
   const orderIdFromUrl = searchParams.get('orderId') || searchParams.get('transaction_id');
   const orderIdFromStorage = localStorage.getItem('last_order_id');
   const orderId = orderIdFromUrl || orderIdFromStorage || 'UNKNOWN';
+
+  // Immediate language check during first render if possible to avoid flash
+  if (!hasProcessed.current && orderId !== 'UNKNOWN') {
+    const cachedOrder = localStorage.getItem(`order_data_${orderId}`);
+    if (cachedOrder) {
+      try {
+        const data = JSON.parse(cachedOrder);
+        if (data.language && data.language !== i18n.language) {
+          console.log(`[Success Render] Pre-switching language to ${data.language}`);
+          i18n.changeLanguage(data.language);
+        }
+      } catch (e) {}
+    }
+  }
+
+  // Immediate language check based on cache to avoid flash of English
+  useEffect(() => {
+    if (orderId !== 'UNKNOWN') {
+      const cachedOrder = localStorage.getItem(`order_data_${orderId}`);
+      if (cachedOrder) {
+        try {
+          const data = JSON.parse(cachedOrder);
+          if (data.language) {
+            const targetLanguage = data.language;
+            const currentLanguage = i18n.language;
+            
+            if (targetLanguage !== currentLanguage) {
+              i18n.changeLanguage(targetLanguage);
+            }
+            
+            const targetIsHebrew = targetLanguage === 'he';
+            if (targetIsHebrew && !isOnHebrewPath) {
+              navigate(`/he/success?${searchParams.toString()}`, { replace: true });
+            } else if (!targetIsHebrew && isOnHebrewPath) {
+              navigate(`/success?${searchParams.toString()}`, { replace: true });
+            }
+          }
+        } catch (e) {}
+      }
+    }
+  }, [orderId, i18n.language, isOnHebrewPath, navigate, searchParams, i18n]);
 
   useEffect(() => {
     const processOrder = async () => {
@@ -58,50 +99,52 @@ const SuccessPage = () => {
   }, [orderId, siteConfig, i18n.language, i18n, isOnHebrewPath, navigate, searchParams]);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      <main className="flex-1 pt-32 pb-20 px-6 flex items-center justify-center">
+    <div className="min-h-screen bg-[#fdfbf7] flex flex-col font-sans selection:bg-teal-100 selection:text-teal-900">
+      <main className="flex-1 pt-32 md:pt-48 pb-20 px-6 flex items-center justify-center">
         <div className="max-w-2xl w-full">
           <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-[48px] shadow-2xl overflow-hidden text-center p-12 md:p-20 border border-slate-100"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="bg-white rounded-[64px] shadow-3xl overflow-hidden text-center p-12 md:p-20 border border-slate-100"
           >
-            <div className="w-24 h-24 bg-teal-50 rounded-full flex items-center justify-center text-teal-600 mx-auto mb-8">
+            <div className="w-24 h-24 bg-teal-50 rounded-[32px] flex items-center justify-center text-teal-600 mx-auto mb-10 shadow-inner">
               <CheckCircle2 className="w-12 h-12" />
             </div>
             
-            <h1 className="text-4xl md:text-5xl font-serif font-bold text-slate-900 mb-6">
-              {t('success.title')} <span className="text-teal-600 italic">{t('success.titlePurchase')}</span>
+            <h1 className="text-[40px] md:text-6xl font-sans font-bold text-slate-900 mb-8 tracking-tighter leading-none">
+              {t('success.title')} <br />
+              <span className="text-teal-600 italic">{t('success.titlePurchase')}</span>
             </h1>
             
-            <p className="text-xl text-slate-600 font-medium mb-12 leading-relaxed">
+            <p className="text-xl md:text-2xl text-slate-500 font-medium mb-12 leading-relaxed">
               {t('success.message')}
             </p>
             
-            <div className="bg-slate-50 rounded-3xl p-8 mb-12 text-start space-y-4 border border-slate-100">
+            <div className="bg-slate-50 rounded-[40px] p-10 mb-12 text-start space-y-6 border border-slate-100 shadow-sm">
               <div className="flex justify-between items-center">
-                <span className="text-slate-500 font-bold uppercase tracking-widest text-xs">{t('success.orderId')}</span>
-                <span className="font-mono font-bold text-slate-900">#{orderId}</span>
+                <span className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">{t('success.orderId')}</span>
+                <span className="font-mono font-bold text-slate-900 text-lg">#{orderId}</span>
               </div>
-              <div className="flex justify-between items-center pt-4 border-t border-slate-200">
-                <span className="text-slate-500 font-bold uppercase tracking-widest text-xs">{t('success.status')}</span>
-                <span className="px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-xs font-black">{t('success.paid')}</span>
+              <div className="flex justify-between items-center pt-6 border-t border-slate-200">
+                <span className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">{t('success.status')}</span>
+                <span className="px-5 py-2 bg-teal-100 text-teal-700 rounded-full text-[10px] font-bold uppercase tracking-widest">{t('success.paid')}</span>
               </div>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-6 justify-center">
               <Link 
                 to={prefix || "/"} 
-                className="px-10 py-5 bg-teal-600 text-white font-bold rounded-full text-lg hover:bg-teal-700 transition-all hover:scale-105 shadow-xl shadow-teal-600/20 flex items-center justify-center gap-2"
+                className="btn-primary bg-teal-600 shadow-teal-600/20 active:scale-95"
               >
-                <Home className="w-5 h-5 shrink-0" />
+                <Home className="w-6 h-6 shrink-0" />
                 {t('success.backHome')}
               </Link>
               <Link 
                 to={`${prefix}/#program`} 
-                className="px-10 py-5 bg-white border-2 border-slate-200 text-slate-600 font-bold rounded-full text-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                className="px-10 py-5 bg-white border border-slate-200 text-slate-600 font-bold rounded-full text-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-3 active:scale-95 shadow-sm"
               >
-                <ShoppingBag className="w-5 h-5 shrink-0" />
+                <ShoppingBag className="w-6 h-6 shrink-0" />
                 {t('success.otherKits')}
               </Link>
             </div>

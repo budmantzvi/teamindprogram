@@ -14,9 +14,16 @@ This project is built with React (Vite) and includes a backend for Vercel deploy
 
 1. Push this code to your GitHub repository.
 2. Import the project in Vercel.
-3. Set the following Environment Variables in Vercel:
+3. **CRITICAL CONFIGURATION**:
+   - **Framework Preset**: Choose `Vite` (if not auto-detected).
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+4. Set the following Environment Variables in Vercel:
+   - `GEMINI_API_KEY`: Your Google Gemini API key.
    - `RESEND_API_KEY`: Your Resend API key.
    - `CONTACT_EMAIL`: The email address where you want to receive notifications.
+   - `BLOB_READ_WRITE_TOKEN`: Required for file uploads (Vercel Blob).
+   - `MAKE_PAYMENT_WEBHOOK_URL`: Your Make.com webhook URL.
 
 ## Payment Integration (Make.com)
 
