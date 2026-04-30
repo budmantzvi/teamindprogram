@@ -75,9 +75,9 @@ export const DEFAULT_CONFIG: any = {
   whyTitle: "Why is TEAMIND Important?",
   whySubtitle: "Executive functions are the 'CEO of the brain.' They are the skills that allow us to focus, plan, remember instructions, and juggle multiple tasks successfully.",
   whyCards: [
-    { title: "Academic Success", desc: "Strong executive skills are better predictors of academic success than IQ.", icon: "Award" },
-    { title: "Emotional Regulation", desc: "Helping children manage their feelings and react constructively to challenges.", icon: "Heart" },
-    { title: "Social Competence", desc: "Building the foundations for empathy, cooperation, and healthy relationships.", icon: "Users" },
+    { title: "Academic Success", desc: "Strong executive skills are better predictors of academic success than IQ.", icon: "Award", link: "/elementary" },
+    { title: "Emotional Regulation", desc: "Helping children manage their feelings and react constructively to challenges.", icon: "Heart", link: "/early-childhood" },
+    { title: "Social Competence", desc: "Building the foundations for empathy, cooperation, and healthy relationships.", icon: "Users", link: "/parents" },
   ],
   faqTitle: "Frequently Asked Questions.",
   faqs: [
@@ -223,9 +223,9 @@ export const DEFAULT_CONFIG: any = {
     { name: "תום התמרור", role: "עיכוב תגובה", desc: "מנהיג מאוזן השולט בתגובות, עוזר לעצור ולהפחית התנהגויות אימפולסיביות (Stopper Stan).", image: "/images/stopper stan.png" },
   ],
   whyCards_he: [
-    { title: "הצלחה אקדמית", desc: "מיומנויות ניהוליות חזקות הן מנבאות טובות יותר להצלחה אקדמית מאשר IQ.", icon: "Award" },
-    { title: "וויסות רגשי", desc: "עזרה לילדים לנהל את רגשותיהם ולהגיב בצורה בונה לאתגרים.", icon: "Heart" },
-    { title: "כשירות חברתית", desc: "בניית היסודות לאמפתיה, שיתוף פעולה ומערכות יחסים בריאות.", icon: "Users" },
+    { title: "הצלחה אקדמית", desc: "מיומנויות ניהוליות חזקות הן מנבאות טובות יותר להצלחה אקדמית מאשר IQ.", icon: "Award", link: "/elementary" },
+    { title: "וויסות רגשי", desc: "עזרה לילדים לנהל את רגשותיהם ולהגיב בצורה בונה לאתגרים.", icon: "Heart", link: "/early-childhood" },
+    { title: "כשירות חברתית", desc: "בניית היסודות לאמפתיה, שיתוף פעולה ומערכות יחסים בריאות.", icon: "Users", link: "/parents" },
   ],
   faqs_he: [
     { 

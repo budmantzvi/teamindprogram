@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 
 interface ProgramFlipCardProps {
@@ -12,10 +12,10 @@ interface ProgramFlipCardProps {
 }
 
 export const ProgramFlipCard = ({ title, description, link, image, color }: ProgramFlipCardProps) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [isFlipped, setIsFlipped] = useState(false);
-  const isHe = i18n.language === 'he';
-  const prefix = isHe ? '/he' : '';
+  const location = useLocation();
+  const isHe = /^\/he($|\/)/.test(location.pathname);
 
   const handleToggleFlip = (e: React.MouseEvent) => {
     // Prevent flip if clicking the button/link on the back
@@ -58,7 +58,7 @@ export const ProgramFlipCard = ({ title, description, link, image, color }: Prog
             </p>
           </div>
           <Link 
-            to={`${prefix}${link}`} 
+            to={link} 
             className="w-full h-16 shrink-0 bg-white text-slate-900 font-black rounded-full flex items-center justify-center transition-all active:scale-95 text-lg shadow-xl shadow-black/10"
             onClick={(e) => e.stopPropagation()}
           >

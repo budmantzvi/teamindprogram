@@ -14,7 +14,7 @@ const SuccessPage = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
 
-  const isOnHebrewPath = location.pathname.startsWith('/he');
+  const isOnHebrewPath = /^\/he($|\/)/.test(location.pathname);
   const isHe = i18n.language === 'he';
   
   // Decide prefix based on both current path and detected language preference

@@ -19,15 +19,21 @@ import { useTranslation } from 'react-i18next';
 import { LanguageToggle } from './LanguageToggle';
 
 export const SEO = ({ title, description, image, url, keywords }: { title?: string, description?: string, image?: string, url?: string, keywords?: string }) => {
-  const { i18n } = useTranslation();
   const location = useLocation();
+  const isHe = /^\/he($|\/)/.test(location.pathname);
+  const { t, i18n } = useTranslation();
+  const prefix = isHe ? '/he' : '';
   const { t_config } = useSite();
-  const siteTitle = t_config('siteTitle') || "TEAMIND | Thinking, Emotions, Attention & Motivation IN Development";
-  const siteDescription = t_config('heroSubtitle') || "TEAMIND is a revolutionary character-based program designed to strengthen executive functions in children through music, play, and emotional connection.";
+  const siteTitle = i18n.language === 'he' 
+    ? "TEAMIND | טימיינד - פיתוח פונקציות ניהוליות וכישורי למידה לילדים" 
+    : "TEAMIND | Thinking, Emotions, Attention & Motivation IN Development";
+  const siteDescription = i18n.language === 'he'
+    ? "טימיינד (TEAMIND) היא תוכנית מבוססת דמויות המפתחת פונקציות ניהוליות אצל ילדים דרך מוסיקה, משחק וחיבור רגשי (SEL). פתרון פדגוגי מוביל לגני ילדים, בתי ספר והורים."
+    : "TEAMIND is a revolutionary character-based program designed to strengthen executive functions in children through music, play, and emotional connection.";
   const siteUrl = "https://teamindprogram.com";
   const siteImage = "https://teamindprogram.com/images/logo.png"; 
 
-  const fullTitle = title ? `${title} | TEAMIND` : siteTitle;
+  const fullTitle = title ? `${title} | TEAMIND טימיינד` : siteTitle;
   const fullDescription = description || siteDescription;
   
   // Use provided url or current location
@@ -35,18 +41,22 @@ export const SEO = ({ title, description, image, url, keywords }: { title?: stri
   const fullUrl = `${siteUrl}${currentPath === '/' ? '' : currentPath}${location.hash}`;
   const fullImage = image || siteImage;
   
-  const defaultKeywords = "TEAMIND, teamind, טימיינד, ערכות לילדים, גן, גננת, חינוך, executive functions, emotional intelligence, child development, kindergarten, pedagogical kit, social emotional learning, SEL";
+  const defaultKeywords = i18n.language === 'he'
+    ? "TEAMIND, teamind, טימיינד, טי מיינד, פיתוח פונקציות ניהוליות, מיומנויות למידה, מוכנות לכיתה א, פיתוח הילד, ערכה פדגוגית, חינוך לגיל הרך, גנים, גננת, יניפר בודמן, שרה אלהרר, למידה רגשית חברתית, SEL"
+    : "TEAMIND, teamind, executive functions, emotional intelligence, child development, kindergarten, pedagogical kit, social emotional learning, SEL, school readiness, Jennifer Budman, Sarah Elharar";
   const fullKeywords = keywords ? `${keywords}, ${defaultKeywords}` : defaultKeywords;
 
   const currentLang = i18n.language === 'he' ? 'he_IL' : 'en_US';
 
   return (
     <Helmet>
+      <html lang={i18n.language} dir={i18n.language === 'he' ? 'rtl' : 'ltr'} />
       {/* Basic Meta Tags */}
       <title>{fullTitle}</title>
       <meta name="description" content={fullDescription} />
       <meta name="keywords" content={fullKeywords} />
       <link rel="canonical" href={fullUrl} />
+      <meta name="robots" content="index, follow" />
       
       {/* Open Graph / Facebook */}
       <meta property="og:type" content="website" />
@@ -392,10 +402,10 @@ export const WhatsAppFloat = () => {
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
+  const isHe = /^\/he($|\/)/.test(location.pathname);
   const { t, i18n } = useTranslation();
   const { t_config } = useSite();
-  const location = useLocation();
-  const isHe = i18n.language === 'he';
   const prefix = isHe ? '/he' : '';
 
   useEffect(() => {
@@ -551,7 +561,8 @@ export const Navbar = () => {
 export const Footer = () => {
   const { siteConfig, t_config } = useSite();
   const { t, i18n } = useTranslation();
-  const isHe = i18n.language === 'he';
+  const location = useLocation();
+  const isHe = /^\/he($|\/)/.test(location.pathname);
   const prefix = isHe ? '/he' : '';
 
   const contactEmail = siteConfig?.contactEmail || "support@teamindprogram.com";

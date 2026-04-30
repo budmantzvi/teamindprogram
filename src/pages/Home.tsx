@@ -125,7 +125,7 @@ export default function Home() {
   const aboutImage = siteImages.about || FALLBACK_IMAGES.about;
 
   // Use localized versions of arrays if they exist in siteConfig
-  const isHe = i18n.language === 'he';
+  const isHe = /^\/he($|\/)/.test(location.pathname);
   const prefix = isHe ? '/he' : '';
   const charactersList = t_config('charactersList');
   const whyCards = t_config('whyCards');
@@ -447,7 +447,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10 lg:gap-12">
               {whyCards.map((item: any, i: number) => {
                 const IconComp = iconMap[item.icon] || Award;
                 const palette = [
@@ -457,13 +457,13 @@ export default function Home() {
                 ];
                 const colorClass = palette[i % palette.length];
                 return (
-                  <div key={i} className="p-12 md:p-14 bg-white rounded-[48px] border border-slate-100 shadow-sm hover:shadow-2xl transition-all group hover:-translate-y-2">
-                    <div className={`w-20 h-20 ${colorClass.split(' ')[0]} rounded-[28px] flex items-center justify-center ${colorClass.split(' ')[1]} mb-10 group-hover:scale-110 transition-transform`}>
-                      <IconComp className="w-10 h-10" />
-                    </div>
-                    <h3 className="text-2xl md:text-3xl font-bold mb-6 tracking-tight">{item.title}</h3>
-                    <p className="text-slate-500 font-medium leading-relaxed text-start">{item.desc}</p>
-                  </div>
+                    <Link key={i} to={`${prefix}${item.link}`} className="flex flex-col p-6 sm:p-8 md:p-8 lg:p-12 bg-white rounded-[40px] md:rounded-[48px] border border-slate-100 shadow-sm hover:shadow-2xl transition-all group hover:-translate-y-2 min-h-[300px] md:min-h-[340px] lg:min-h-[320px]">
+                      <div className={`w-14 h-14 sm:w-16 sm:h-16 md:w-16 md:h-16 lg:w-20 lg:h-20 ${colorClass.split(' ')[0]} rounded-2xl md:rounded-[28px] flex items-center justify-center ${colorClass.split(' ')[1]} mb-6 sm:mb-8 group-hover:scale-110 transition-transform shrink-0`}>
+                        <IconComp className="w-7 h-7 sm:w-8 sm:h-8 md:w-8 md:h-8 lg:w-10 lg:h-10" />
+                      </div>
+                      <h3 className="text-lg sm:text-xl md:text-xl lg:text-3xl font-bold mb-3 sm:mb-4 md:mb-6 tracking-tight leading-snug">{item.title}</h3>
+                      <p className="text-slate-500 font-medium leading-relaxed text-start text-sm md:text-sm lg:text-base flex-grow">{item.desc}</p>
+                    </Link>
                 );
               })}
             </div>
@@ -490,21 +490,21 @@ export default function Home() {
               <ProgramFlipCard 
                 title={t_config('earlyChildhood.title')}
                 description={t_config('earlyChildhood.cardDescription')}
-                link="/early-childhood"
+                link={`${prefix}/early-childhood`}
                 image={siteImages.earlyHero}
                 color="bg-brand-green"
               />
               <ProgramFlipCard 
                 title={t_config('elementary.title')}
                 description={t_config('elementary.cardDescription')}
-                link="/elementary"
+                link={`${prefix}/elementary`}
                 image={siteImages.elementaryHero}
                 color="bg-brand-light-blue"
               />
               <ProgramFlipCard 
                 title={t_config('parents.title')}
                 description={t_config('parents.cardDescription')}
-                link="/parents"
+                link={`${prefix}/parents`}
                 image={siteImages.parentsHero}
                 color="bg-brand-red"
               />

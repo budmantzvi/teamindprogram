@@ -6,7 +6,7 @@ import {
   Star, Quote, Mail, Phone, MapPin, Package, Music,
   Sparkles, Layers, BookOpen, Smile, Award, Loader2, Camera, Play, Image
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { SEO } from "../components/Shared";
 import { useSite } from '../lib/SiteContext';
 import { DEFAULT_CONFIG, safeSplit } from '../lib/constants';
@@ -15,7 +15,8 @@ import { useTranslation } from 'react-i18next';
 export default function EarlyChildhood() {
   const { siteConfig, siteImages, t_config } = useSite();
   const { t, i18n } = useTranslation();
-  const isHe = i18n.language === 'he';
+  const location = useLocation();
+  const isHe = /^\/he($|\/)/.test(location.pathname);
   const prefix = isHe ? '/he' : '';
 
   const pageData = {

@@ -1,13 +1,14 @@
 import { motion } from "motion/react";
 import { ShieldCheck, ArrowLeft, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSite } from "../lib/SiteContext";
 
 export default function PrivacyPolicy() {
   const { t, i18n } = useTranslation();
   const { t_config } = useSite();
-  const isHe = i18n.language === 'he';
+  const location = useLocation();
+  const isHe = /^\/he($|\/)/.test(location.pathname);
 
   const prefix = isHe ? '/he' : '';
   const policyHtml = isHe ? t_config('privacyPolicyHtml_he') : t_config('privacyPolicyHtml');

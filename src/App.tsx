@@ -39,45 +39,20 @@ function ScrollToHash() {
 function LanguageHandler() {
   const location = useLocation();
   const { i18n } = useTranslation();
-  const isHebrew = location.pathname.startsWith('/he');
+  const isHebrew = /^\/he($|\/)/.test(location.pathname);
+  const isAdminPath = location.pathname.startsWith('/teamind-secure-portal-2024-v2');
   const lang = isHebrew ? 'he' : 'en';
 
   useEffect(() => {
-    // SPECIAL CASE: Success page redirection from external payment
-    // If we are on /success (English path) but the order was Hebrew, 
-    // we want to avoid i18next switching to English before Success.tsx can redirect.
-    if ((location.pathname === '/success' || location.pathname === '/he/success') && !i18n.language) {
-       // Just ensuring i18n is initialized if it's the first load
-    }
-
-    if (location.pathname.endsWith('/success') && !isHebrew) {
-      const searchParams = new URLSearchParams(location.search);
-      const orderId = searchParams.get('orderId') || searchParams.get('transaction_id') || localStorage.getItem('last_order_id');
-      if (orderId) {
-        const cached = localStorage.getItem(`order_data_${orderId}`);
-        if (cached) {
-          try {
-            const data = JSON.parse(cached);
-            if (data.language === 'he') {
-              console.log("[App] Detected Hebrew order from cache, ensuring Hebrew context");
-              if (i18n.language !== 'he') i18n.changeLanguage('he');
-              document.documentElement.lang = 'he';
-              document.documentElement.dir = 'rtl';
-              // If they are on /success but it's a Hebrew order, we might want to force the path too
-              // but we'll let Success.tsx handle the navigation to avoid redundant history entries here
-              return;
-            }
-          } catch(e) {}
-        }
-      }
-    }
-
+    if (isAdminPath) return; // Don't enforce language on admin path
+    
+    // Check if we need to switch i18n
     if (i18n.language !== lang) {
       i18n.changeLanguage(lang);
     }
     document.documentElement.lang = lang;
     document.documentElement.dir = isHebrew ? 'rtl' : 'ltr';
-  }, [lang, i18n, location.pathname, location.search, isHebrew]);
+  }, [lang, i18n, location.pathname, isHebrew, isAdminPath]);
 
   const baseUrl = "https://teamindprogram.com";
   const pathWithoutLang = isHebrew ? location.pathname.replace('/he', '') || '/' : location.pathname;
@@ -121,6 +96,9 @@ function AppContent() {
       {!isAdminPage && <Navbar />}
       <main>
         <Routes>
+          {/* Admin Route - Handled first and separately to avoid interference */}
+          <Route path="/teamind-secure-portal-2024-v2" element={<Admin />} />
+
           {/* Hebrew Routes */}
           <Route path="/he">
             <Route index element={<Home />} />
@@ -132,6 +110,7 @@ function AppContent() {
             <Route path="success" element={<Success />} />
             <Route path="privacy-policy" element={<PrivacyPolicy />} />
             <Route path="terms-of-service" element={<TermsOfService />} />
+            <Route path="*" element={<Navigate to="/he" replace />} />
           </Route>
 
           {/* English Routes (Root) */}
@@ -147,9 +126,6 @@ function AppContent() {
             <Route path="terms-of-service" element={<TermsOfService />} />
           </Route>
 
-          {/* Admin Route - Keep it outside localization logic if possible, or just ignore prefix */}
-          <Route path="/teamind-secure-portal-2024-v2" element={<Admin />} />
-          
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
