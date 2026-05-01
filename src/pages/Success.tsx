@@ -124,7 +124,7 @@ const SuccessPage = () => {
             <div className="bg-slate-50 rounded-[40px] p-10 mb-12 text-start space-y-6 border border-slate-100 shadow-sm">
               <div className="flex justify-between items-center">
                 <span className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">{t('success.orderId')}</span>
-                <span className="font-mono font-bold text-slate-900 text-lg">#{orderId}</span>
+                <span className="font-mono font-bold text-slate-900 text-lg" dir="ltr">#{orderId}</span>
               </div>
               <div className="flex justify-between items-center pt-6 border-t border-slate-200">
                 <span className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">{t('success.status')}</span>
@@ -132,20 +132,13 @@ const SuccessPage = () => {
               </div>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-6 justify-center">
+            <div className="flex justify-center pt-4">
               <Link 
                 to={prefix || "/"} 
-                className="btn-primary bg-teal-600 shadow-teal-600/20 active:scale-95"
+                className="px-12 py-6 bg-teal-600 text-white font-bold rounded-full text-xl hover:bg-teal-700 transition-all flex items-center justify-center gap-4 active:scale-95 shadow-2xl shadow-teal-600/30 w-full sm:w-auto min-w-[320px]"
               >
-                <Home className="w-6 h-6 shrink-0" />
+                <Home className="w-7 h-7 shrink-0" />
                 {t('success.backHome')}
-              </Link>
-              <Link 
-                to={`${prefix}/#program`} 
-                className="px-10 py-5 bg-white border border-slate-200 text-slate-600 font-bold rounded-full text-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-3 active:scale-95 shadow-sm"
-              >
-                <ShoppingBag className="w-6 h-6 shrink-0" />
-                {t('success.otherKits')}
               </Link>
             </div>
           </motion.div>
