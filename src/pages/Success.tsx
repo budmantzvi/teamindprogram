@@ -99,8 +99,8 @@ const SuccessPage = () => {
   }, [orderId, siteConfig, i18n.language, i18n, isOnHebrewPath, navigate, searchParams]);
 
   return (
-    <div className="min-h-screen bg-[#fdfbf7] flex flex-col font-sans selection:bg-teal-100 selection:text-teal-900">
-      <main className="flex-1 pt-32 md:pt-48 pb-20 px-6 flex items-center justify-center">
+    <div className="min-h-screen bg-[#fdfbf7] flex flex-col font-sans selection:bg-teal-100 selection:text-teal-900 justify-center">
+      <main className="flex-1 py-12 md:py-20 px-6 flex items-center justify-center">
         <div className="max-w-2xl w-full">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}

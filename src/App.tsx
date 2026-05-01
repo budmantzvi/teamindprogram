@@ -85,7 +85,13 @@ function LanguageHandler() {
 
 function AppContent() {
   const location = useLocation();
-  const isAdminPage = location.pathname.toLowerCase().startsWith('/teamind-secure-portal-2024-v2');
+  const pathname = location.pathname.toLowerCase();
+  
+  const isAdminPage = pathname.startsWith('/teamind-secure-portal-2024-v2');
+  const isCheckoutPage = pathname.endsWith('/checkout') || pathname === '/checkout';
+  const isSuccessPage = pathname.endsWith('/success') || pathname === '/success';
+  
+  const hideLayout = isAdminPage || isCheckoutPage || isSuccessPage;
 
   useEffect(() => {
     if (isAdminPage) {
@@ -99,7 +105,7 @@ function AppContent() {
       <ScrollToHash />
       <Analytics />
       <Toaster position="top-center" richColors />
-      {!isAdminPage && <Navbar />}
+      {!hideLayout && <Navbar />}
       <main>
         <Routes>
           {/* Admin Route - Handled first and separately to avoid interference */}
@@ -136,7 +142,7 @@ function AppContent() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-      {!isAdminPage && <Footer />}
+      {!hideLayout && <Footer />}
     </>
   );
 }

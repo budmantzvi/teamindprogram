@@ -167,6 +167,8 @@ export default function Home() {
   const contactEmail = siteConfig?.contactEmail || DEFAULT_CONFIG.contactEmail;
   const contactPhone = siteConfig?.contactPhone || DEFAULT_CONFIG.contactPhone;
 
+  const videoUrl = t_config('videoUrl');
+
   const handlePlay = () => {
     if (videoRef.current) {
       videoRef.current.play();
@@ -214,7 +216,10 @@ export default function Home() {
     <div className="min-h-screen bg-[#fdfbf7] text-slate-900 font-sans selection:bg-brand-pink/30 selection:text-brand-pink overflow-x-hidden">
       <SEO 
         title={t('nav.home')} 
-        description="TEAMIND is a revolutionary character-based program designed to strengthen executive functions in children through music, play, and emotional connection."
+        description={isHe 
+          ? "טימיינד (TEAMIND) היא תוכנית מבוססת דמויות המפתחת פונקציות ניהוליות אצל ילדים דרך מוסיקה, משחק וחיבור רגשי (SEL)." 
+          : "TEAMIND is a revolutionary character-based program designed to strengthen executive functions in children through music, play, and emotional connection."
+        }
         keywords="TEAMIND, teamind, טימיינד, פיתוח מיומנויות, גן, בית ספר, חינוך, גננת, מוכנות לכיתה א, פונקציות ניהוליות, למידה רגשית חברתית, SEL"
       />
       
@@ -371,6 +376,7 @@ export default function Home() {
               )}
               
               <video 
+                key={videoUrl}
                 ref={videoRef}
                 className="w-full h-full object-cover"
                 controls
@@ -379,7 +385,7 @@ export default function Home() {
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
               >
-                <source src="/promo.mp4" type="video/mp4" />
+                <source src={videoUrl} type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
             </div>

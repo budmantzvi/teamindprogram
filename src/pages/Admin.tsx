@@ -1488,6 +1488,7 @@ export default function Admin() {
                     { id: 'videoBadge', label: 'Badge', type: 'text' },
                     { id: 'videoTitle', label: 'Title', type: 'text' },
                     { id: 'videoSubtitle', label: 'Subtitle', type: 'textarea' },
+                    { id: 'videoUrl', label: 'Video URL (e.g. /promo.mp4)', type: 'text' },
                   ]
                 },
                 {
@@ -1689,6 +1690,20 @@ export default function Admin() {
                             )}
                           </React.Fragment>
                         )})}
+
+                        {section.title === "Video" && (
+                          <div className="md:col-span-2 p-6 bg-blue-50 rounded-[32px] border border-blue-100 flex items-start gap-4">
+                            <Info className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
+                            <div className="space-y-2">
+                              <p className="text-sm font-bold text-blue-900">How to update the video?</p>
+                              <p className="text-xs text-blue-700 leading-relaxed font-medium">
+                                To use a new video, upload it using the file explorer in the editor (under "public") and then enter its name here (e.g., <b>/myvideo.mp4</b>). 
+                                Alternatively, use a direct link from a hosting service like Dropbox (direct link) or Amazon S3. 
+                                Note: Standard YouTube/Vimeo links will not work directly in the player.
+                              </p>
+                            </div>
+                          </div>
+                        )}
 
                         {section.title === "Success Stories" && (
                           <div className="md:col-span-2 space-y-6">

@@ -78,7 +78,10 @@ export default function Parents() {
     <div className="min-h-screen bg-[#fdfbf7] text-slate-900 font-sans selection:bg-brand-pink/30 selection:text-brand-pink pt-32 md:pt-48 overflow-x-hidden">
       <SEO 
         title={t('programs.parents')} 
-        description={pageData.subtitle}
+        description={isHe 
+          ? "תוכנית TEAMIND להורים מספקת כלים פרקטיים לחיזוק הקשר הרגשי ופיתוח מיומנויות ניהוליות בבית." 
+          : "TEAMIND Parents program provides practical tools to strengthen emotional connection and develop executive functions at home."
+        }
         keywords="הדרכת הורים, עבודה עם ילדים בבית, ערכת הורים, מיומנויות לבית, Parenting tools, Homework skills, Home executive functions, חינוך מהבית, פיתוח הילד, טיפים להורים"
       />
       {/* Hero Section */}

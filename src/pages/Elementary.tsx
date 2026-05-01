@@ -38,8 +38,6 @@ export default function Elementary() {
     siteImages.elementaryGallery3,
     siteImages.elementaryGallery4,
     siteImages.elementaryGallery5,
-    siteImages.elementaryGallery6,
-    siteImages.elementaryGallery7,
   ].filter(Boolean);
   
   const fallbackGallery = [
@@ -48,8 +46,6 @@ export default function Elementary() {
     "/images/Elementary-3.jpeg",
     "/images/Elementary-4.jpeg",
     "/images/Elementary-5.jpeg",
-    "/images/Elementary-6.jpeg",
-    "/images/Elementary-7.jpeg",
   ];
 
   const displayGallery = galleryImages.length > 0 ? galleryImages : fallbackGallery;
@@ -76,7 +72,10 @@ export default function Elementary() {
     <div className="min-h-screen bg-[#fdfbf7] text-slate-900 font-sans selection:bg-brand-light-blue/30 selection:text-brand-light-blue pt-32 md:pt-48 overflow-x-hidden">
       <SEO 
         title={t('programs.elementary')} 
-        description={pageData.subtitle}
+        description={isHe 
+          ? "תוכנית TEAMIND לבתי ספר יסודיים (גילאי 6-12) מחזקת מיומנויות למידה, ריכוז וארגון בקרב תלמידים." 
+          : "TEAMIND Elementary program (Ages 6-12) strengthens learning skills, focus, and organization in students."
+        }
         keywords="ערכת בית ספר יסודי, מיומנויות למידה ליסודי, אסטרטגיות למידה, תפקודי ניהול בבית הספר, Elementary school executive functions, Learning strategies, מוכנות ללימודים, שיפור ריכוז, קשב וריכוז"
       />
       {/* Hero Section */}

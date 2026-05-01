@@ -38,8 +38,6 @@ export default function EarlyChildhood() {
     siteImages.earlyGallery3,
     siteImages.earlyGallery4,
     siteImages.earlyGallery5,
-    siteImages.earlyGallery6,
-    siteImages.earlyGallery7,
   ].filter(Boolean);
   
   const fallbackGallery = [
@@ -48,8 +46,6 @@ export default function EarlyChildhood() {
     "/images/early-3.jpeg",
     "/images/early-4.jpeg",
     "/images/early-5.jpeg",
-    "/images/early-6.png",
-    "/images/early-7.png",
   ];
 
   const displayGallery = galleryImages.length > 0 ? galleryImages : fallbackGallery;
@@ -76,7 +72,10 @@ export default function EarlyChildhood() {
     <div className="min-h-screen bg-[#fdfbf7] text-slate-900 font-sans selection:bg-brand-green/30 selection:text-brand-green pt-32 md:pt-48 overflow-x-hidden">
       <SEO 
         title={t('programs.early')} 
-        description={pageData.subtitle}
+        description={isHe 
+          ? "תוכנית TEAMIND לגיל הרך (גילאי 3-6) מפתחת פונקציות ניהוליות דרך משחק, מוסיקה ודמויות מעוררות השראה." 
+          : "TEAMIND Early Childhood program (Ages 3-6) develops executive functions through play, music, and inspiring characters."
+        }
         keywords="ערכת הגיל הרך, גנים, מיומנויות למידה לגן, מוכנות לכיתה א, פונקציות ניהוליות לגן, Early childhood education, Preschool skills, kindergarten teacher, גננות, חינוך לגיל הרך"
       />
       {/* Hero Section */}

@@ -22,8 +22,6 @@ export const FALLBACK_IMAGES: any = {
   earlyGallery3: "/images/early-3.jpeg",
   earlyGallery4: "/images/early-4.jpeg",
   earlyGallery5: "/images/early-5.jpeg",
-  earlyGallery6: "/images/early-6.png",
-  earlyGallery7: "/images/early-7.png",
   
   // Elementary
   elementaryHero: "/images/for_elemntry.png",
@@ -33,8 +31,6 @@ export const FALLBACK_IMAGES: any = {
   elementaryGallery3: "/images/Elementary-3.jpeg",
   elementaryGallery4: "/images/Elementary-4.jpeg",
   elementaryGallery5: "/images/Elementary-5.jpeg",
-  elementaryGallery6: "/images/Elementary-6.jpeg",
-  elementaryGallery7: "/images/Elementary-7.jpeg",
   
   // Parents
   parentsHero: "/images/for_parents.png",
@@ -128,6 +124,8 @@ export const DEFAULT_CONFIG: any = {
   showFounders: true,
   showFaq: true,
   showContact: true,
+  videoUrl: '/promo.mp4',
+  videoUrl_he: '/promo.mp4',
   testimonials: [
     { name: "Sarah J.", role: "Preschool Teacher", text: "TEAMIND has completely changed the digital and emotional landscape of my classroom. The kids are obsessed with Driver Dan and Brainman!", image: "https://i.pravatar.cc/150?u=sarah" },
     { name: "David L.", role: "Elementary Principal", text: "Finally, a program that bridges the gap between cognitive theory and actual classroom practice. We've seen a 40% reduction in disciplinary issues.", image: "https://i.pravatar.cc/150?u=david" },

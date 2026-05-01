@@ -32,7 +32,10 @@ export default function About() {
     <div className="min-h-screen bg-[#fdfbf7] text-slate-900 font-sans selection:bg-brand-orange/30 selection:text-brand-orange pt-32 md:pt-48 overflow-x-hidden">
       <SEO 
         title={t('nav.about')} 
-        description={aboutSubtitle}
+        description={isHe 
+          ? "הכירו את הצוות שמאחורי TEAMIND - מומחיות בחינוך ופיתוח הילד המביאות גישה חדשנית לפיתוח פונקציות ניהוליות." 
+          : "Meet the team behind TEAMIND - education and child development experts bringing an innovative approach to executive function development."
+        }
         url="/about"
         keywords="about TEAMIND, אודות טימיינד, פיתוח פונקציות ניהוליות, מחקר נוירו-התפתחותי, המייסדות, executive functions research, child development founders"
       />

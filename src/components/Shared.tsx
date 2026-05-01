@@ -36,6 +36,11 @@ export const SEO = ({ title, description, image, url, keywords }: { title?: stri
   const fullTitle = title ? `${title} | TEAMIND טימיינד` : siteTitle;
   const fullDescription = description || siteDescription;
   
+  // Clean path calculation
+  const cleanPath = location.pathname.replace(/^\/he(\/|$)/, '/');
+  const enUrl = `${siteUrl}${cleanPath === '/' ? '' : cleanPath}`;
+  const heUrl = `${siteUrl}/he${cleanPath === '/' ? '' : cleanPath}`;
+  
   // Use provided url or current location
   const currentPath = url || location.pathname;
   const fullUrl = `${siteUrl}${currentPath === '/' ? '' : currentPath}${location.hash}`;
@@ -56,6 +61,12 @@ export const SEO = ({ title, description, image, url, keywords }: { title?: stri
       <meta name="description" content={fullDescription} />
       <meta name="keywords" content={fullKeywords} />
       <link rel="canonical" href={fullUrl} />
+      
+      {/* Language Alternates (SEO for Multi-language) */}
+      <link rel="alternate" hrefLang="en" href={enUrl} />
+      <link rel="alternate" hrefLang="he" href={heUrl} />
+      <link rel="alternate" hrefLang="x-default" href={enUrl} />
+
       <meta name="robots" content="index, follow" />
       
       {/* Open Graph / Facebook */}
