@@ -1,6 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /teamind-secure-portal-2024-v2
-Disallow: /teamind-secure-portal-2024-v2/*
-
-Sitemap: https://teamindprogram.com/sitemap.xml
