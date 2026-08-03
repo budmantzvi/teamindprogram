@@ -175,23 +175,42 @@ async function startServer() {
     });
   });
 
-  // API Route: File Upload to Vercel Blob
-  app.post("/api/upload", async (req, res) => {
+  // Ensure uploads directory exists and serve static uploads
+  const uploadsDir = path.resolve(__dirname, 'public', 'uploads');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  app.use('/uploads', express.static(uploadsDir));
+
+  // API Route: File Upload (Vercel Blob with Local Disk Fallback)
+  app.post("/api/upload", express.raw({ type: '*/*', limit: '15mb' }), async (req, res) => {
     try {
-      const filename = req.query.filename as string;
+      const filename = (req.query.filename as string) || `upload_${Date.now()}.png`;
       const contentType = req.headers['content-type'] || 'application/octet-stream';
       
-      if (!process.env.BLOB_READ_WRITE_TOKEN) {
-        throw new Error("BLOB_READ_WRITE_TOKEN is missing");
+      if (process.env.BLOB_READ_WRITE_TOKEN) {
+        const blob = await put(filename, req.body, {
+          access: 'public',
+          contentType: contentType,
+        });
+        return res.json(blob);
       }
 
-      // Read stream from request
-      const blob = await put(filename || 'upload.bin', req, {
-        access: 'public',
-        contentType: contentType,
-      });
+      // Local disk fallback
+      const cleanFilename = `${Date.now()}-${filename.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+      const filePath = path.join(uploadsDir, cleanFilename);
+      
+      const buffer = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body);
+      fs.writeFileSync(filePath, buffer);
 
-      res.json(blob);
+      // Copy to dist/client/uploads if dist exists
+      const distUploadsDir = path.resolve(__dirname, 'dist', 'client', 'uploads');
+      if (fs.existsSync(distUploadsDir)) {
+        fs.writeFileSync(path.join(distUploadsDir, cleanFilename), buffer);
+      }
+
+      console.log(`[Upload] File saved locally to ${filePath}`);
+      res.json({ url: `/uploads/${cleanFilename}` });
     } catch (err: any) {
       console.error("[Upload] Error:", err);
       res.status(500).json({ error: err.message });
