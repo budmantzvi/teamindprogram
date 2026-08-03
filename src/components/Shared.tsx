@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from "motion/react";
 import { 
   Menu, X, Loader2, Phone, Mail, MapPin, MessageCircle, ChevronDown, CheckCircle2, Brain, Youtube,
@@ -25,7 +25,7 @@ export const SEO = ({ title, description, image, url, keywords }: { title?: stri
   const prefix = isHe ? '/he' : '';
   const { t_config } = useSite();
   const siteTitle = i18n.language === 'he' 
-    ? "TEAMIND | טימיינד - פיתוח פונקציות ניהוליות וכישורי למידה לילדים" 
+    ? "טימיינד | פיתוח פונקציות ניהוליות וכישורי למידה לילדים" 
     : "TEAMIND | Thinking, Emotions, Attention & Motivation IN Development";
   const siteDescription = i18n.language === 'he'
     ? "טימיינד (TEAMIND) היא תוכנית מבוססת דמויות המפתחת פונקציות ניהוליות אצל ילדים דרך מוסיקה, משחק וחיבור רגשי (SEL). פתרון פדגוגי מוביל לגני ילדים, בתי ספר והורים."
@@ -33,7 +33,7 @@ export const SEO = ({ title, description, image, url, keywords }: { title?: stri
   const siteUrl = "https://teamindprogram.com";
   const siteImage = "https://teamindprogram.com/images/logo.png"; 
 
-  const fullTitle = title ? `${title} | TEAMIND טימיינד` : siteTitle;
+  const fullTitle = title ? `${title} | ${i18n.language === 'he' ? 'טימיינד' : 'TEAMIND'}` : siteTitle;
   const fullDescription = description || siteDescription;
   
   // Clean path calculation
@@ -398,6 +398,7 @@ export const WhatsAppFloat = () => {
       animate={{ scale: 1, opacity: 1 }}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
+      style={{ transform: 'translateZ(0)', willChange: 'transform' }}
       className="fixed bottom-6 right-6 z-[60] w-16 h-16 bg-[#25D366] text-white rounded-full shadow-2xl flex items-center justify-center transition-transform hover:shadow-green-500/40 md:w-18 md:h-18"
       aria-label="Contact on WhatsApp"
     >
@@ -420,8 +421,11 @@ export const Navbar = () => {
   const prefix = isHe ? '/he' : '';
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
+    const handleScroll = () => {
+      const isScrolled = window.scrollY > 20;
+      setScrolled(prev => (prev !== isScrolled ? isScrolled : prev));
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -431,7 +435,31 @@ export const Navbar = () => {
     } else {
       document.body.style.overflow = 'unset';
     }
+    return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen]);
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    setIsOpen(false);
+    if (href.includes('#')) {
+      const parts = href.split('#');
+      const targetPath = parts[0] || '/';
+      const hash = parts[1];
+      
+      const currentPath = window.location.pathname;
+      // Allow for trailing slashes differences
+      const normalizedCurrent = currentPath.replace(/\/$/, '') || '/';
+      const normalizedTarget = targetPath.replace(/\/$/, '') || '/';
+
+      if (normalizedCurrent === normalizedTarget) {
+        const element = document.getElementById(hash);
+        if (element) {
+          e.preventDefault();
+          window.history.pushState(null, '', href);
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+    }
+  };
 
   const navLinks = [
     { name: t('nav.home'), href: prefix || "/" },
@@ -444,8 +472,10 @@ export const Navbar = () => {
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out ${
-        scrolled ? 'bg-white/80 backdrop-blur-xl py-1 shadow-lg shadow-slate-900/[0.04]' : 'bg-transparent py-4 md:py-6'
+      <nav 
+        style={{ transform: 'translateZ(0)', willChange: 'transform' }}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out transform-gpu ${
+        scrolled ? 'bg-white/95 backdrop-blur-md py-3 shadow-md shadow-slate-900/[0.04]' : 'bg-transparent py-4 md:py-6'
       }`}>
         <div className="max-w-[1440px] mx-auto px-6 md:px-12 flex flex-row justify-between items-center" dir="ltr">
           <Link to={prefix || "/"} className="flex items-center" onClick={() => setIsOpen(false)}>
@@ -458,6 +488,7 @@ export const Navbar = () => {
               <Link 
                 key={link.name}
                 to={link.href}
+                onClick={(e) => handleNavClick(e, link.href)}
                 className="text-[10px] lg:text-[12px] font-bold text-slate-700 hover:text-brand-green-tech hover:no-underline transition-all relative group uppercase tracking-widest"
               >
                 {link.name}
@@ -467,7 +498,11 @@ export const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center gap-4">
-            <Link to={`${prefix}/#contact`} className="px-6 py-2 bg-brand-green-tech text-white font-bold rounded-full hover:shadow-lg hover:shadow-brand-green-tech/20 transition-all hover:-translate-y-0.5 active:scale-95 text-[10px] lg:text-[11px] uppercase tracking-[0.2em]">
+            <Link 
+              to={`${prefix}/#contact`} 
+              onClick={(e) => handleNavClick(e, `${prefix}/#contact`)}
+              className="px-6 py-2 bg-brand-green-tech text-white font-bold rounded-full hover:shadow-lg hover:shadow-brand-green-tech/20 transition-all hover:-translate-y-0.5 active:scale-95 text-[10px] lg:text-[11px] uppercase tracking-[0.2em]"
+            >
               {navBtnText}
             </Link>
           </div>
@@ -504,9 +539,9 @@ export const Navbar = () => {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-0 z-[100] bg-white flex flex-col p-8 md:hidden"
+            className="fixed inset-0 z-[100] bg-white flex flex-col p-8 md:hidden h-[100dvh] overflow-y-auto overscroll-contain"
           >
-            <div className="flex justify-between items-center mb-12">
+            <div className="flex justify-between items-center mb-12 shrink-0">
               <Logo size="md" />
               <button 
                 onClick={() => setIsOpen(false)}
@@ -516,13 +551,13 @@ export const Navbar = () => {
               </button>
             </div>
 
-            <nav className="flex flex-col gap-6">
+            <nav className="flex flex-col gap-6 shrink-0">
               {navLinks.map((link) => (
                 <Link 
                   key={link.name}
                   to={link.href} 
                   className="text-3xl font-serif font-bold text-slate-900 hover:text-brand-green-tech border-b border-slate-100 pb-4 flex justify-between items-center"
-                  onClick={() => setIsOpen(false)}
+                  onClick={(e) => handleNavClick(e, link.href)}
                 >
                   {link.name}
                   <ArrowRight className="w-6 h-6 opacity-20" />
@@ -530,21 +565,21 @@ export const Navbar = () => {
               ))}
               
               {/* Direct Project Links */}
-              <div className="pt-8 space-y-4">
+              <div className="pt-8 space-y-4 shrink-0">
                 <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 mb-2">{t('footer.programs')}</p>
-                <Link to={`${prefix}/early-childhood`} onClick={() => setIsOpen(false)} className="flex items-center gap-4 p-5 bg-brand-orange/5 rounded-[24px] text-brand-orange font-bold text-lg">
+                <Link to={`${prefix}/early-childhood`} onClick={(e) => handleNavClick(e, `${prefix}/early-childhood`)} className="flex items-center gap-4 p-5 bg-brand-orange/5 rounded-[24px] text-brand-orange font-bold text-lg">
                   <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
                     <Brain className="w-5 h-5" />
                   </div>
                   {t('programs.early')}
                 </Link>
-                <Link to={`${prefix}/elementary`} onClick={() => setIsOpen(false)} className="flex items-center gap-4 p-5 bg-brand-red/5 rounded-[24px] text-brand-red font-bold text-lg">
+                <Link to={`${prefix}/elementary`} onClick={(e) => handleNavClick(e, `${prefix}/elementary`)} className="flex items-center gap-4 p-5 bg-brand-red/5 rounded-[24px] text-brand-red font-bold text-lg">
                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
                     <Zap className="w-5 h-5" />
                   </div>
                   {t('programs.elementary')}
                 </Link>
-                <Link to={`${prefix}/parents`} onClick={() => setIsOpen(false)} className="flex items-center gap-4 p-5 bg-brand-light-blue/5 rounded-[24px] text-brand-light-blue font-bold text-lg">
+                <Link to={`${prefix}/parents`} onClick={(e) => handleNavClick(e, `${prefix}/parents`)} className="flex items-center gap-4 p-5 bg-brand-light-blue/5 rounded-[24px] text-brand-light-blue font-bold text-lg">
                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
                     <Heart className="w-5 h-5" />
                   </div>
@@ -553,11 +588,11 @@ export const Navbar = () => {
               </div>
             </nav>
 
-            <div className="mt-auto space-y-4">
+            <div className="mt-8 space-y-4 shrink-0 pb-12">
               <Link 
                 to={`${prefix}/#contact`} 
                 className="w-full py-5 bg-brand-green-tech text-white rounded-full text-xl font-bold shadow-xl active:scale-95 transition-all text-center block"
-                onClick={() => setIsOpen(false)}
+                onClick={(e) => handleNavClick(e, `${prefix}/#contact`)}
               >
                 {navBtnText}
               </Link>

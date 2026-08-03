@@ -27,12 +27,13 @@ export const ProgramFlipCard = ({ title, description, link, image, color }: Prog
 
   return (
     <div 
-      className="h-[500px] [perspective:1000px] cursor-pointer"
+      className="h-[500px] [perspective:1000px] cursor-pointer group"
       onClick={handleToggleFlip}
-      onMouseEnter={() => !('ontouchstart' in window) && setIsFlipped(true)}
-      onMouseLeave={() => !('ontouchstart' in window) && setIsFlipped(false)}
     >
-      <div className={`flip-card-inner ${isFlipped ? 'flipped' : ''}`}>
+      <div 
+        className={`flip-card-inner ${isFlipped ? 'flipped' : ''} group-hover:md:[transform:rotateY(180deg)] transition-transform duration-700 ease-out`}
+        style={{ willChange: "transform", transformStyle: "preserve-3d" }}
+      >
         {/* Front Side */}
         <div className="flip-card-front rounded-[64px] overflow-hidden shadow-3xl border-[8px] border-white bg-white">
           <img 

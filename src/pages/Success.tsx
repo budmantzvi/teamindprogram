@@ -124,7 +124,9 @@ const SuccessPage = () => {
             <div className="bg-slate-50 rounded-[40px] p-10 mb-12 text-start space-y-6 border border-slate-100 shadow-sm">
               <div className="flex justify-between items-center">
                 <span className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">{t('success.orderId')}</span>
-                <span className="font-mono font-bold text-slate-900 text-lg" dir="ltr">#{orderId}</span>
+                <span className="font-mono font-bold text-slate-900 text-lg inline-flex" dir="ltr">
+                  <span>#</span><span>{orderId}</span>
+                </span>
               </div>
               <div className="flex justify-between items-center pt-6 border-t border-slate-200">
                 <span className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">{t('success.status')}</span>
@@ -132,12 +134,12 @@ const SuccessPage = () => {
               </div>
             </div>
             
-            <div className="flex justify-center pt-4">
+            <div className="flex justify-center pt-8">
               <Link 
                 to={prefix || "/"} 
-                className="px-12 py-6 bg-teal-600 text-white font-bold rounded-full text-xl hover:bg-teal-700 transition-all flex items-center justify-center gap-4 active:scale-95 shadow-2xl shadow-teal-600/30 w-full sm:w-auto min-w-[320px]"
+                className="px-8 py-5 bg-teal-600 text-white font-bold rounded-[32px] text-lg hover:bg-teal-700 transition-all flex items-center justify-center gap-3 active:scale-95 shadow-xl shadow-teal-600/30 w-full max-w-xs mx-auto"
               >
-                <Home className="w-7 h-7 shrink-0" />
+                <Home className="w-6 h-6 shrink-0" />
                 {t('success.backHome')}
               </Link>
             </div>

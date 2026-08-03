@@ -73,7 +73,7 @@ export default function EarlyChildhood() {
       <SEO 
         title={t('programs.early')} 
         description={isHe 
-          ? "תוכנית TEAMIND לגיל הרך (גילאי 3-6) מפתחת פונקציות ניהוליות דרך משחק, מוסיקה ודמויות מעוררות השראה." 
+          ? "תוכנית טימיינד לגיל הרך (גילאי 3-6) מפתחת פונקציות ניהוליות דרך משחק, מוסיקה ודמויות מעוררות השראה." 
           : "TEAMIND Early Childhood program (Ages 3-6) develops executive functions through play, music, and inspiring characters."
         }
         keywords="ערכת הגיל הרך, גנים, מיומנויות למידה לגן, מוכנות לכיתה א, פונקציות ניהוליות לגן, Early childhood education, Preschool skills, kindergarten teacher, גננות, חינוך לגיל הרך"

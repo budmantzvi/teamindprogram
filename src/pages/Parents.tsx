@@ -79,7 +79,7 @@ export default function Parents() {
       <SEO 
         title={t('programs.parents')} 
         description={isHe 
-          ? "תוכנית TEAMIND להורים מספקת כלים פרקטיים לחיזוק הקשר הרגשי ופיתוח מיומנויות ניהוליות בבית." 
+          ? "תוכנית טימיינד להורים מספקת כלים פרקטיים לחיזוק הקשר הרגשי ופיתוח מיומנויות ניהוליות בבית." 
           : "TEAMIND Parents program provides practical tools to strengthen emotional connection and develop executive functions at home."
         }
         keywords="הדרכת הורים, עבודה עם ילדים בבית, ערכת הורים, מיומנויות לבית, Parenting tools, Homework skills, Home executive functions, חינוך מהבית, פיתוח הילד, טיפים להורים"

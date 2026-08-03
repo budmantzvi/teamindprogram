@@ -130,7 +130,10 @@ export default function Home() {
   const charactersList = t_config('charactersList');
   const whyCards = t_config('whyCards');
   const faqsList = t_config('faqs');
-  const testimonialsList = t_config('testimonials');
+  const testimonialsList = isHe 
+    ? (siteConfig?.testimonials_he || DEFAULT_CONFIG.testimonials_he || t_config('testimonials'))
+    : (siteConfig?.testimonials || DEFAULT_CONFIG.testimonials || t_config('testimonials'));
+
   const foundersList = t_config('foundersMembers');
 
   const mergedCharacters = getSynchronizedCharacters(
@@ -245,8 +248,11 @@ export default function Home() {
                 </div>
                 <h1 className="text-[44px] md:text-7xl lg:text-8xl font-serif font-medium tracking-tighter leading-[0.95] text-slate-900 mb-8">
                   {safeSplit(heroTitle, '.').map((part: string, i: number, arr: string[]) => (
-                    <span key={i} className={`block ${i === arr.length - 1 ? "text-brand-green-tech italic" : ""}`}>
-                      {part}{i < arr.length - 1 ? '.' : ''}
+                    <span key={i}>
+                      <span className={`block ${i === arr.length - 1 ? "text-brand-green-tech italic" : ""}`}>
+                        {part}{i < arr.length - 1 ? '.' : ''}
+                      </span>
+                      {i < arr.length - 1 && ' '}
                     </span>
                   ))}
                 </h1>
@@ -356,8 +362,11 @@ export default function Home() {
                       <h3 className="text-3xl md:text-5xl font-sans font-bold text-white tracking-tight">
                         {safeSplit(videoTitle, '.').map((part: string, i: number, arr: string[]) => (
                           <span key={i}>
-                            {part}{i < arr.length - 1 ? '.' : ''}
+                            <span>
+                              {part}{i < arr.length - 1 ? '.' : ''}
+                            </span>
                             {i < arr.length - 1 && <br />}
+                            {i < arr.length - 1 && ' '}
                           </span>
                         ))}
                       </h3>
@@ -393,6 +402,51 @@ export default function Home() {
         </section>
       )}
 
+      {/* Program Section */}
+      {(siteConfig?.showPrograms !== false) && (
+        <section id="program" className="py-24 md:py-32 lg:py-44 bg-white">
+          <div className="max-w-[1440px] mx-auto px-6 md:px-12">
+            <div className="text-center max-w-3xl mx-auto mb-20 lg:mb-32">
+              <h2 className="text-4xl md:text-6xl font-sans font-bold mb-8">
+                {safeSplit(programsTitle, ' ').map((word: string, i: number, arr: string[]) => (
+                  <span key={i}>
+                    <span className={i === arr.length - 1 ? "text-brand-light-blue italic" : ""}>
+                      {word}
+                    </span>
+                    {i < arr.length - 1 && ' '}
+                  </span>
+                ))}
+              </h2>
+              <p className="text-xl text-slate-600 font-medium">{programsSubtitle}</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <ProgramFlipCard 
+                title={t_config('earlyChildhood.title')}
+                description={t_config('earlyChildhood.cardDescription')}
+                link={`${prefix}/early-childhood`}
+                image={siteImages.earlyHero}
+                color="bg-brand-green"
+              />
+              <ProgramFlipCard 
+                title={t_config('elementary.title')}
+                description={t_config('elementary.cardDescription')}
+                link={`${prefix}/elementary`}
+                image={siteImages.elementaryHero}
+                color="bg-brand-light-blue"
+              />
+              <ProgramFlipCard 
+                title={t_config('parents.title')}
+                description={t_config('parents.cardDescription')}
+                link={`${prefix}/parents`}
+                image={siteImages.parentsHero}
+                color="bg-brand-red"
+              />
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* About Section */}
       {(siteConfig?.showAbout !== false) && (
         <section id="about" className="py-24 bg-white">
@@ -401,8 +455,11 @@ export default function Home() {
               <div className="space-y-10 text-center lg:text-start">
                 <h2 className="text-[32px] md:text-6xl font-sans font-bold md:font-medium lg:font-semibold leading-[1.1] tracking-tighter">
                   {safeSplit(aboutTitle, '.').map((part: string, i: number, arr: string[]) => (
-                    <span key={i} className="block">
-                      {part}{i < arr.length - 1 ? '.' : ''}
+                    <span key={i}>
+                      <span className="block">
+                        {part}{i < arr.length - 1 ? '.' : ''}
+                      </span>
+                      {i < arr.length - 1 && ' '}
                     </span>
                   ))}
                 </h2>
@@ -443,8 +500,11 @@ export default function Home() {
             <div className="text-center max-w-3xl mx-auto mb-20 lg:mb-32">
               <h2 className="text-[32px] md:text-5xl lg:text-5xl font-serif font-medium tracking-tighter mb-8 leading-tight">
                 {safeSplit(whyTitle, ' ').map((word: string, i: number, arr: string[]) => (
-                  <span key={i} className={i === arr.length - 1 ? "text-brand-green-tech italic" : "block md:inline"}>
-                    {word}{i < arr.length - 1 ? ' ' : ''}
+                  <span key={i}>
+                    <span className={i === arr.length - 1 ? "text-brand-green-tech italic" : "block md:inline"}>
+                      {word}
+                    </span>
+                    {i < arr.length - 1 && ' '}
                   </span>
                 ))}
               </h2>
@@ -477,48 +537,6 @@ export default function Home() {
         </section>
       )}
 
-      {/* Program Section */}
-      {(siteConfig?.showPrograms !== false) && (
-        <section id="program" className="py-24 md:py-32 lg:py-44 bg-white">
-          <div className="max-w-[1440px] mx-auto px-6 md:px-12">
-            <div className="text-center max-w-3xl mx-auto mb-20 lg:mb-32">
-              <h2 className="text-4xl md:text-6xl font-sans font-bold mb-8">
-                {safeSplit(programsTitle, ' ').map((word: string, i: number, arr: string[]) => (
-                  <span key={i} className={i === arr.length - 1 ? "text-brand-light-blue italic" : ""}>
-                    {word}{i < arr.length - 1 ? ' ' : ''}
-                  </span>
-                ))}
-              </h2>
-              <p className="text-xl text-slate-600 font-medium">{programsSubtitle}</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <ProgramFlipCard 
-                title={t_config('earlyChildhood.title')}
-                description={t_config('earlyChildhood.cardDescription')}
-                link={`${prefix}/early-childhood`}
-                image={siteImages.earlyHero}
-                color="bg-brand-green"
-              />
-              <ProgramFlipCard 
-                title={t_config('elementary.title')}
-                description={t_config('elementary.cardDescription')}
-                link={`${prefix}/elementary`}
-                image={siteImages.elementaryHero}
-                color="bg-brand-light-blue"
-              />
-              <ProgramFlipCard 
-                title={t_config('parents.title')}
-                description={t_config('parents.cardDescription')}
-                link={`${prefix}/parents`}
-                image={siteImages.parentsHero}
-                color="bg-brand-red"
-              />
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* Characters Section */}
       {(siteConfig?.showCharacters !== false) && (
         <section id="characters" className="py-24 md:py-32 lg:py-44 bg-white overflow-hidden">
@@ -527,8 +545,11 @@ export default function Home() {
               <div className="max-w-2xl">
                 <h2 className="text-4xl md:text-6xl font-sans font-bold mb-8">
                   {safeSplit(charactersTitle, ' ').map((word: string, i: number, arr: string[]) => (
-                    <span key={i} className={i === arr.length - 1 ? "text-brand-orange italic" : ""}>
-                      {word}{i < arr.length - 1 ? ' ' : ''}
+                    <span key={i}>
+                      <span className={i === arr.length - 1 ? "text-brand-orange italic" : ""}>
+                        {word}
+                      </span>
+                      {i < arr.length - 1 && ' '}
                     </span>
                   ))}
                 </h2>
@@ -538,10 +559,9 @@ export default function Home() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {mergedCharacters.map((char: any, i: number) => (
-                <motion.div 
+                <div 
                   key={i}
-                  whileHover={{ y: -10 }}
-                  className="p-10 bg-slate-50 rounded-[48px] border border-slate-100 hover:bg-white hover:shadow-xl transition-all group"
+                  className="p-10 bg-slate-50 rounded-[48px] border border-slate-100 hover:bg-white hover:shadow-xl hover:-translate-y-2 transition-all duration-300 transform-gpu group"
                 >
                   <div className="relative w-40 h-40 mb-8 mx-auto">
                     <div className={`absolute inset-0 ${char.color} rounded-2xl rotate-6 group-hover:rotate-12 transition-transform opacity-20`} />
@@ -561,7 +581,7 @@ export default function Home() {
                   <p className="text-slate-600 font-medium leading-relaxed text-center line-clamp-3 lg:line-clamp-none overflow-hidden h-20 lg:h-auto">
                     {char.desc}
                   </p>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
@@ -577,22 +597,50 @@ export default function Home() {
             </h2>
           </div>
           
-          <div className="relative flex overflow-x-hidden" dir="ltr">
+          <div 
+            className="relative flex overflow-x-hidden transform-gpu" 
+            dir="ltr"
+            onMouseEnter={() => setIsMarqueePaused(true)}
+            onMouseLeave={() => setIsMarqueePaused(false)}
+            onTouchStart={() => setIsMarqueePaused(true)}
+            onTouchEnd={() => setIsMarqueePaused(false)}
+            onTouchCancel={() => setIsMarqueePaused(false)}
+          >
             <div 
               className="py-12 animate-marquee flex whitespace-nowrap"
-              style={{ animationPlayState: isMarqueePaused ? 'paused' : 'running' }}
+              style={{ 
+                willChange: "transform", 
+                transform: "translate3d(0, 0, 0)", 
+                backfaceVisibility: "hidden",
+                animationPlayState: isMarqueePaused ? 'paused' : 'running'
+              }}
             >
               {[...testimonialsList, ...testimonialsList].map((t: any, i: number) => (
                 <div 
                   key={i} 
-                  className={`mx-4 w-[85vw] md:w-[450px] p-10 md:p-12 bg-slate-50 rounded-[48px] border border-slate-100 flex flex-col gap-8 shrink-0 transition-all ${isHe ? 'text-right' : 'text-left'}`}
+                  className={`mx-4 w-[85vw] md:w-[450px] p-10 md:p-12 bg-slate-50 rounded-[48px] border border-slate-100 flex flex-col gap-8 shrink-0 transition-shadow duration-300 ${isHe ? 'text-right' : 'text-left'}`}
                   dir={isHe ? 'rtl' : 'ltr'}
                   onMouseEnter={() => setIsMarqueePaused(true)}
                   onMouseLeave={() => setIsMarqueePaused(false)}
+                  onTouchStart={() => setIsMarqueePaused(true)}
+                  onTouchEnd={() => setIsMarqueePaused(false)}
+                  onTouchCancel={() => setIsMarqueePaused(false)}
                 >
                   <p className="text-slate-600 text-lg md:text-xl font-medium italic leading-relaxed whitespace-normal">"{t.text}"</p>
                   <div className={`flex items-center gap-6 mt-auto ${isHe ? 'flex-row-reverse' : ''}`}>
-                    <img src={t.image} alt={t.name} className="w-16 h-16 rounded-full object-cover shadow-md border-4 border-white" referrerPolicy="no-referrer" loading="lazy" decoding="async" />
+                    {t.image && t.image.trim() !== '' && (
+                      <img 
+                        src={t.image} 
+                        alt={t.name} 
+                        className="w-16 h-16 rounded-full object-cover shadow-md border-4 border-white shrink-0" 
+                        referrerPolicy="no-referrer" 
+                        loading="lazy" 
+                        decoding="async"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                    )}
                     <div className={isHe ? 'text-right' : 'text-left'}>
                       <h4 className="font-bold text-slate-900 text-lg">{t.name}</h4>
                       <p className="text-xs text-brand-orange font-bold uppercase tracking-widest">{t.role}</p>
@@ -612,8 +660,11 @@ export default function Home() {
             <div className="text-center max-w-3xl mx-auto mb-20 lg:mb-32">
               <h2 className="text-[32px] md:text-5xl lg:text-5xl font-sans font-bold md:font-medium lg:font-semibold mb-8 leading-[1.1] tracking-tighter">
                 {safeSplit(foundersTitle, '.').map((part: string, i: number, arr: string[]) => (
-                  <span key={i} className="block">
-                    {part}{i < arr.length - 1 ? '.' : ''}
+                  <span key={i}>
+                    <span className="block">
+                      {part}{i < arr.length - 1 ? '.' : ''}
+                    </span>
+                    {i < arr.length - 1 && ' '}
                   </span>
                 ))}
               </h2>
@@ -661,8 +712,11 @@ export default function Home() {
           <div className="max-w-3xl mx-auto px-6">
             <h2 className="text-4xl md:text-5xl lg:text-5xl font-sans font-bold mb-16 lg:mb-24 text-center tracking-tighter">
               {safeSplit(faqTitle, ' ').map((word: string, i: number, arr: string[]) => (
-                <span key={i} className={i === arr.length - 1 ? "text-brand-pink italic" : ""}>
-                  {word}{i < arr.length - 1 ? ' ' : ''}
+                <span key={i}>
+                  <span className={i === arr.length - 1 ? "text-brand-pink italic" : ""}>
+                    {word}
+                  </span>
+                  {i < arr.length - 1 && ' '}
                 </span>
               ))}
             </h2>
@@ -704,8 +758,11 @@ export default function Home() {
                 <div className="space-y-8">
                   <h2 className="text-[40px] md:text-7xl font-sans font-bold leading-none tracking-tighter">
                     {safeSplit(contactTitle, '.').map((part: string, i: number, arr: string[]) => (
-                      <span key={i} className={`block ${i === 0 ? "text-brand-red" : ""}`}>
-                        {part}{i < arr.length - 1 ? '.' : ''}
+                      <span key={i}>
+                        <span className={`block ${i === 0 ? "text-brand-red" : ""}`}>
+                          {part}{i < arr.length - 1 ? '.' : ''}
+                        </span>
+                        {i < arr.length - 1 && ' '}
                       </span>
                     ))}
                   </h2>

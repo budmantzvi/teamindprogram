@@ -38,7 +38,7 @@ function ScrollToHash() {
 
 function LanguageHandler() {
   const location = useLocation();
-  const { i18n } = useTranslation();
+  const { i18n, t: translate } = useTranslation();
   const isHebrew = /^\/he($|\/)/.test(location.pathname);
   const isAdminPath = location.pathname.startsWith('/teamind-secure-portal-2024-v2');
   const lang = isHebrew ? 'he' : 'en';
@@ -67,18 +67,80 @@ function LanguageHandler() {
   else if (pathWithoutLang === "/elementary") seoKey = "elementary";
   else if (pathWithoutLang === "/parents") seoKey = "parents";
 
-  const { t: translate } = useTranslation();
-  const pageTitle = translate(`seo.${seoKey}.title`, { defaultValue: "TEAMIND" });
-  const pageDescription = translate(`seo.${seoKey}.description`, { defaultValue: "Development of Executive Functions" });
+  const pageTitle = translate(`seo.${seoKey}.title`, { 
+    defaultValue: isHebrew 
+      ? "TEAMIND (טימיינד) | תוכנית פיתוח פונקציות ניהוליות ומיומנויות למידה" 
+      : "TEAMIND Program | Executive Functions & Learning Skills Development" 
+  });
+  const pageDescription = translate(`seo.${seoKey}.description`, { 
+    defaultValue: isHebrew 
+      ? "תוכנית טימיינד (TEAMIND / teamindprogram) היא התוכנית המובילה לפיתוח פונקציות ניהוליות, כישורי למידה, וויסות עצמי ואינטליגנציה רגשית אצל ילדים." 
+      : "TEAMIND (teamindprogram / teamind program) is a leading character-based program designed to strengthen executive functions in children." 
+  });
+
+  const keywordsStr = isHebrew
+    ? "TEAMIND, Teamind, teamind, team mind, Team Mind, TEAM MIND, team mind program, teamind program, teamindprogram, טימיינד, תוכנית טימיינד, טי מיינד, יניפר בודמן, שרה אלחרר, פיתוח הילד, פונקציות ניהוליות, מיומנויות למידה, מוכנות לכיתה א, ערכות פדגוגיות, SEL, למידה רגשית חברתית, וויסות עצמי"
+    : "teamind, team mind, Team Mind, team mind program, teamind program, teamindprogram, TEAMIND, Teamind, טימיינד, executive functions, learning skills, cognitive development, child development, SEL, pedagogical kits, early childhood education";
+
+  const schemaData = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": pageTitle,
+    "description": pageDescription,
+    "url": canonicalUrl,
+    "inLanguage": isHebrew ? "he-IL" : "en-US",
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": isHebrew ? "TEAMIND - טימיינד" : "TEAMIND Program",
+      "url": "https://teamindprogram.com/",
+      "alternateName": ["TEAMIND", "teamind", "team mind", "Team Mind", "team mind program", "teamind program", "teamindprogram", "טימיינד", "תוכנית טימיינד", "טי מיינד"]
+    }
+  };
 
   return (
     <Helmet>
+      <html lang={lang} dir={isHebrew ? 'rtl' : 'ltr'} />
       <title>{pageTitle}</title>
+      <meta name="title" content={pageTitle} />
       <meta name="description" content={pageDescription} />
+      <meta name="keywords" content={keywordsStr} />
+      
+      {/* Canonical & Language Alternates */}
       <link rel="canonical" href={canonicalUrl} />
       <link rel="alternate" hrefLang="en" href={enUrl} />
       <link rel="alternate" hrefLang="he" href={heUrl} />
       <link rel="alternate" hrefLang="x-default" href={enUrl} />
+
+      {/* Universal Icons */}
+      <link rel="shortcut icon" href="https://teamindprogram.com/favicon.ico" type="image/x-icon" />
+      <link rel="icon" href="https://teamindprogram.com/favicon.ico" type="image/x-icon" />
+      <link rel="icon" type="image/png" sizes="16x16" href="https://teamindprogram.com/favicon-16x16.png" />
+      <link rel="icon" type="image/png" sizes="32x32" href="https://teamindprogram.com/favicon-32x32.png" />
+      <link rel="icon" type="image/png" sizes="192x192" href="https://teamindprogram.com/android-chrome-192x192.png" />
+      <link rel="icon" type="image/png" sizes="512x512" href="https://teamindprogram.com/android-chrome-512x512.png" />
+      <link rel="apple-touch-icon" sizes="180x180" href="https://teamindprogram.com/apple-touch-icon.png" />
+      <link rel="manifest" href="https://teamindprogram.com/manifest.json" />
+
+      {/* Open Graph */}
+      <meta property="og:type" content="website" />
+      <meta property="og:url" content={canonicalUrl} />
+      <meta property="og:site_name" content={isHebrew ? "TEAMIND - טימיינד" : "TEAMIND Program"} />
+      <meta property="og:title" content={pageTitle} />
+      <meta property="og:description" content={pageDescription} />
+      <meta property="og:locale" content={isHebrew ? "he_IL" : "en_US"} />
+      <meta property="og:image" content="https://teamindprogram.com/android-chrome-512x512.png" />
+      <meta property="og:image:width" content="512" />
+      <meta property="og:image:height" content="512" />
+
+      {/* Twitter */}
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:url" content={canonicalUrl} />
+      <meta name="twitter:title" content={pageTitle} />
+      <meta name="twitter:description" content={pageDescription} />
+      <meta name="twitter:image" content="https://teamindprogram.com/android-chrome-512x512.png" />
+
+      {/* JSON-LD Schema */}
+      <script type="application/ld+json">{JSON.stringify(schemaData)}</script>
     </Helmet>
   );
 }

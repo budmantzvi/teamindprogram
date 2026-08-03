@@ -73,7 +73,7 @@ export default function Elementary() {
       <SEO 
         title={t('programs.elementary')} 
         description={isHe 
-          ? "תוכנית TEAMIND לבתי ספר יסודיים (גילאי 6-12) מחזקת מיומנויות למידה, ריכוז וארגון בקרב תלמידים." 
+          ? "תוכנית טימיינד לבתי ספר יסודיים (גילאי 6-12) מחזקת מיומנויות למידה, ריכוז וארגון בקרב תלמידים." 
           : "TEAMIND Elementary program (Ages 6-12) strengthens learning skills, focus, and organization in students."
         }
         keywords="ערכת בית ספר יסודי, מיומנויות למידה ליסודי, אסטרטגיות למידה, תפקודי ניהול בבית הספר, Elementary school executive functions, Learning strategies, מוכנות ללימודים, שיפור ריכוז, קשב וריכוז"

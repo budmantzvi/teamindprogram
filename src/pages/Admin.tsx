@@ -77,6 +77,7 @@ export default function Admin() {
   const [orderSearchTerm, setOrderSearchTerm] = useState('');
   const [authorizedAdmins, setAuthorizedAdmins] = useState<any[]>([]);
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(['Global Settings']));
+  const [testimonialLang, setTestimonialLang] = useState<'he' | 'en'>('he');
   
   const toggleSection = (title: string) => {
     const newSections = new Set(openSections);
@@ -671,25 +672,38 @@ export default function Admin() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
     const file = e.target.files?.[0];
     if (file) {
-      const loadingToast = toast.loading('Uploading to secure cloud storage...');
+      const loadingToast = toast.loading('מעלה תמונה...');
       
       const uploadFile = async () => {
         try {
-          // Use our server-side proxy for security (hides the Vercel token)
-          const response = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': file.type,
-            },
-            body: file,
-          });
+          let url = '';
+          try {
+            const response = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': file.type || 'application/octet-stream',
+              },
+              body: file,
+            });
 
-          if (!response.ok) throw new Error('Upload failed');
+            if (response.ok) {
+              const blob = await response.json();
+              if (blob.url) url = blob.url;
+            }
+          } catch (serverErr) {
+            console.warn("Server upload fallback to FileReader:", serverErr);
+          }
 
-          const blob = await response.json();
-          const url = blob.url;
-          
-          // Save the secure link to Firestore
+          if (!url) {
+            url = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(file);
+            });
+          }
+
+          // Save link to Firestore
           await setDoc(doc(db, 'siteImages', field), { 
             url: url,
             updatedAt: new Date().toISOString()
@@ -704,10 +718,10 @@ export default function Admin() {
             console.warn("Failed to update global image timestamp:", e);
           }
           
-          toast.success('Image uploaded successfully', { id: loadingToast });
+          toast.success('התמונה הועלתה בהצלחה', { id: loadingToast });
         } catch (err: any) {
           console.error("Error uploading image:", err);
-          toast.error('Failed to upload: ' + err.message, { id: loadingToast });
+          toast.error('שגיאה בהעלאת התמונה: ' + err.message, { id: loadingToast });
         }
       };
 
@@ -715,40 +729,77 @@ export default function Admin() {
     }
   };
 
-  const handleTestimonialImageUpload = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+  const handleTestimonialImageUpload = (e: React.ChangeEvent<HTMLInputElement>, index: number, listKey: 'testimonials' | 'testimonials_he' = 'testimonials') => {
     const file = e.target.files?.[0];
     if (file) {
-      const loadingToast = toast.loading('Uploading profile picture...');
+      const loadingToast = toast.loading('מעלה ומעבד תמונת פרופיל...');
       
       const uploadFile = async () => {
         try {
-          // Use our server-side proxy
-          const response = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': file.type,
-            },
-            body: file,
+          // Read raw file as data URL
+          const rawBase64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
           });
 
-          if (!response.ok) throw new Error('Upload failed');
+          // Compress to avatar size (max 300x300, JPEG 0.7) for fast loading and Firestore compatibility
+          const compressedBase64 = await compressImage(rawBase64, 300, 300);
 
-          const blob = await response.json();
-          const url = blob.url;
+          let url = '';
+          try {
+            const response = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'image/jpeg',
+              },
+              body: compressedBase64,
+            });
+
+            if (response.ok) {
+              const blob = await response.json();
+              if (blob.url) url = blob.url;
+            }
+          } catch (serverErr) {
+            console.warn("Server upload fallback to compressed base64:", serverErr);
+          }
+
+          if (!url) {
+            url = compressedBase64;
+          }
           
-          const newList = [...siteConfig.testimonials];
-          newList[index].image = url;
-          const newConfig = { ...siteConfig, testimonials: newList };
-          setSiteConfig(newConfig);
-          handleUpdateConfig(newConfig, true);
+          const currentList = [...(siteConfig[listKey] || DEFAULT_CONFIG[listKey] || [])];
+          if (currentList[index]) {
+            currentList[index] = { ...currentList[index], image: url };
+            const newConfig = { ...siteConfig, [listKey]: currentList };
+            setSiteConfig(newConfig);
+            await handleUpdateConfig(newConfig, true);
+          }
           
-          toast.success('Profile picture updated successfully', { id: loadingToast });
+          toast.success('תמונת הפרופיל עודכנה בהצלחה', { id: loadingToast });
         } catch (err: any) {
-          toast.error('Failed to upload image: ' + err.message, { id: loadingToast });
+          console.error("Error uploading testimonial image:", err);
+          toast.error('שגיאה בהעלאת התמונה: ' + err.message, { id: loadingToast });
         }
       };
 
       uploadFile();
+    }
+  };
+
+  const handleDeleteTestimonialImage = async (index: number, listKey: 'testimonials' | 'testimonials_he' = 'testimonials') => {
+    try {
+      const currentList = [...(siteConfig[listKey] || DEFAULT_CONFIG[listKey] || [])];
+      if (currentList[index]) {
+        currentList[index] = { ...currentList[index], image: '' };
+        const newConfig = { ...siteConfig, [listKey]: currentList };
+        setSiteConfig(newConfig);
+        await handleUpdateConfig(newConfig, true);
+        toast.success('תמונת הפרופיל הוסרה בהצלחה');
+      }
+    } catch (err: any) {
+      toast.error('שגיאה בהסרת התמונה: ' + err.message);
     }
   };
 
@@ -1705,94 +1756,189 @@ export default function Admin() {
                           </div>
                         )}
 
-                        {section.title === "Success Stories" && (
-                          <div className="md:col-span-2 space-y-6">
-                            <div className="flex justify-between items-center mb-4">
-                              <h5 className="text-sm font-black text-slate-400 uppercase tracking-widest">Manage Testimonials</h5>
-                              <button 
-                                onClick={() => {
-                                  const newList = [...(siteConfig.testimonials || [])];
-                                  newList.push({ name: "New Person", role: "Role", text: "Testimonial text...", image: "https://i.pravatar.cc/150" });
-                                  const newConfig = {...siteConfig, testimonials: newList};
-                                  setSiteConfig(newConfig);
-                                  handleUpdateConfig(newConfig, true);
-                                }}
-                                className="px-4 py-2 bg-teal-50 text-teal-600 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-teal-100"
-                              >
-                                <Plus className="w-3 h-3" /> Add Testimonial
-                              </button>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              {(siteConfig.testimonials || []).map((t: any, idx: number) => (
-                                <div key={idx} className="bg-slate-50 p-6 rounded-[32px] border border-slate-100 space-y-4 relative group">
-                                  <button 
-                                    onClick={() => {
-                                      const newList = siteConfig.testimonials.filter((_: any, i: number) => i !== idx);
-                                      const newConfig = {...siteConfig, testimonials: newList};
-                                      setSiteConfig(newConfig);
-                                      handleUpdateConfig(newConfig, true);
-                                    }}
-                                    className="absolute -top-2 -right-2 w-8 h-8 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                        {section.title === "Success Stories" && (() => {
+                          const isHebrewList = testimonialLang === 'he';
+                          const listKey = isHebrewList ? 'testimonials_he' : 'testimonials';
+                          const currentList = siteConfig[listKey] || (isHebrewList ? DEFAULT_CONFIG.testimonials_he : DEFAULT_CONFIG.testimonials) || [];
+
+                          return (
+                            <div className="md:col-span-2 space-y-6">
+                              {/* Language selector tabs */}
+                              <div className="flex items-center justify-between flex-wrap gap-4 pb-2 border-b border-slate-100">
+                                <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl">
+                                  <button
+                                    type="button"
+                                    onClick={() => setTestimonialLang('he')}
+                                    className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
+                                      testimonialLang === 'he'
+                                        ? 'bg-white text-teal-700 shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-900'
+                                    }`}
                                   >
-                                    <Trash2 className="w-4 h-4" />
+                                    <Globe className="w-4 h-4 text-teal-500" />
+                                    <span>עברית (Hebrew)</span>
                                   </button>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Name</label>
-                                      <input 
-                                        value={t.name}
-                                        onChange={(e) => handleListChange('testimonials', idx, 'name', e.target.value)}
-                                        className="w-full px-4 py-2 bg-white border border-slate-200 rounded-full text-xs font-bold outline-none"
-                                      />
-                                    </div>
-                                    <div className="space-y-1">
-                                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Role</label>
-                                      <input 
-                                        value={t.role}
-                                        onChange={(e) => handleListChange('testimonials', idx, 'role', e.target.value)}
-                                        className="w-full px-4 py-2 bg-white border border-slate-200 rounded-full text-xs font-bold outline-none"
-                                      />
-                                    </div>
-                                  </div>
-                                  <div className="space-y-1">
-                                    <div className="flex items-center justify-between">
-                                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Image URL</label>
-                                      <div className="relative">
-                                        <input 
-                                          type="file" 
-                                          accept="image/*" 
-                                          onChange={(e) => handleTestimonialImageUpload(e, idx)}
-                                          className="absolute inset-0 opacity-0 cursor-pointer"
-                                        />
-                                        <button className="flex items-center gap-1 text-[9px] font-black text-teal-600 uppercase tracking-widest hover:underline">
-                                          <FileUp className="w-3 h-3" /> Upload File
-                                        </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setTestimonialLang('en')}
+                                    className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
+                                      testimonialLang === 'en'
+                                        ? 'bg-white text-teal-700 shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-900'
+                                    }`}
+                                  >
+                                    <Globe className="w-4 h-4 text-blue-500" />
+                                    <span>English (אנגלית)</span>
+                                  </button>
+                                </div>
+
+                                <button 
+                                  onClick={() => {
+                                    const newList = [...currentList];
+                                    newList.push(isHebrewList ? { 
+                                      name: "שם מלא", 
+                                      role: "תפקיד / תיאור", 
+                                      text: "תוכן ההמלצה...", 
+                                      image: "https://i.pravatar.cc/150" 
+                                    } : { 
+                                      name: "New Person", 
+                                      role: "Role", 
+                                      text: "Testimonial text...", 
+                                      image: "https://i.pravatar.cc/150" 
+                                    });
+                                    const newConfig = { ...siteConfig, [listKey]: newList };
+                                    setSiteConfig(newConfig);
+                                    handleUpdateConfig(newConfig, true);
+                                  }}
+                                  className="px-4 py-2 bg-teal-50 text-teal-600 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-teal-100 transition-all active:scale-95"
+                                >
+                                  <Plus className="w-4 h-4" /> 
+                                  <span>{isHebrewList ? "הוסף המלצה בעברית" : "Add English Testimonial"}</span>
+                                </button>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {currentList.map((t: any, idx: number) => (
+                                  <div key={idx} className="bg-slate-50 p-6 rounded-[32px] border border-slate-100 space-y-4 relative group">
+                                    <button 
+                                      onClick={() => {
+                                        const newList = currentList.filter((_: any, i: number) => i !== idx);
+                                        const newConfig = { ...siteConfig, [listKey]: newList };
+                                        setSiteConfig(newConfig);
+                                        handleUpdateConfig(newConfig, true);
+                                      }}
+                                      title="מחק המלצה זו"
+                                      className="absolute -top-2 -right-2 w-8 h-8 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-rose-600"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+
+                                    {/* Avatar Preview, Computer Upload & Delete Buttons */}
+                                    <div className="flex items-center gap-4 p-3.5 bg-white rounded-2xl border border-slate-200/80 shadow-sm">
+                                      <div className="relative w-16 h-16 rounded-full overflow-hidden bg-slate-100 border-2 border-teal-500 shrink-0 group/img">
+                                        {t.image ? (
+                                          <img src={t.image} alt={t.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                        ) : (
+                                          <div className="w-full h-full flex items-center justify-center text-slate-400">
+                                            <User className="w-8 h-8" />
+                                          </div>
+                                        )}
+                                        <label className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 flex items-center justify-center cursor-pointer transition-opacity" title="לחץ להחלפת תמונה מהמחשב">
+                                          <FileUp className="w-5 h-5 text-white" />
+                                          <input 
+                                            type="file" 
+                                            accept="image/*" 
+                                            onChange={(e) => handleTestimonialImageUpload(e, idx, listKey)}
+                                            className="hidden"
+                                          />
+                                        </label>
+                                      </div>
+                                      
+                                      <div className="flex-1 space-y-2">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">תמונת פרופיל</p>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                          <label className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-full text-xs font-bold cursor-pointer inline-flex items-center gap-1.5 transition-all shadow-sm active:scale-95">
+                                            <FileUp className="w-3.5 h-3.5" />
+                                            <span>העלה מהמחשב</span>
+                                            <input 
+                                              type="file" 
+                                              accept="image/*" 
+                                              onChange={(e) => handleTestimonialImageUpload(e, idx, listKey)}
+                                              className="hidden"
+                                            />
+                                          </label>
+
+                                          {t.image && (
+                                            <button
+                                              type="button"
+                                              onClick={() => handleDeleteTestimonialImage(idx, listKey)}
+                                              className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-full text-xs font-bold inline-flex items-center gap-1.5 transition-all active:scale-95 border border-rose-200"
+                                              title="מחק תמונת פרופיל"
+                                            >
+                                              <Trash2 className="w-3.5 h-3.5" />
+                                              <span>מחק תמונה</span>
+                                            </button>
+                                          )}
+                                        </div>
                                       </div>
                                     </div>
-                                    <input 
-                                      value={t.image}
-                                      onChange={(e) => {
-                                        const newList = [...siteConfig.testimonials];
-                                        newList[idx].image = e.target.value;
-                                        setSiteConfig({...siteConfig, testimonials: newList});
-                                      }}
-                                      onBlur={() => handleUpdateConfig(siteConfig, true)}
-                                      className="w-full px-4 py-2 bg-white border border-slate-200 rounded-full text-xs font-bold outline-none"
-                                    />
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                      <div className="space-y-1">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                          {isHebrewList ? "שם" : "Name"}
+                                        </label>
+                                        <input 
+                                          value={t.name || ''}
+                                          onChange={(e) => handleListChange(listKey, idx, 'name', e.target.value)}
+                                          className="w-full px-4 py-2 bg-white border border-slate-200 rounded-full text-xs font-bold outline-none focus:border-teal-500"
+                                        />
+                                      </div>
+                                      <div className="space-y-1">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                          {isHebrewList ? "תפקיד / כותרת" : "Role"}
+                                        </label>
+                                        <input 
+                                          value={t.role || ''}
+                                          onChange={(e) => handleListChange(listKey, idx, 'role', e.target.value)}
+                                          className="w-full px-4 py-2 bg-white border border-slate-200 rounded-full text-xs font-bold outline-none focus:border-teal-500"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                        {isHebrewList ? "כתובת תמונה (אופציונלי)" : "Image URL (Optional)"}
+                                      </label>
+                                      <input 
+                                        value={t.image || ''}
+                                        onChange={(e) => {
+                                          const newList = [...currentList];
+                                          newList[idx].image = e.target.value;
+                                          setSiteConfig({ ...siteConfig, [listKey]: newList });
+                                        }}
+                                        onBlur={() => handleUpdateConfig(siteConfig, true)}
+                                        placeholder="https://... or uploaded path"
+                                        className="w-full px-4 py-2 bg-white border border-slate-200 rounded-full text-xs font-bold outline-none focus:border-teal-500"
+                                      />
+                                    </div>
+
+                                    <div className="space-y-1">
+                                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                        {isHebrewList ? "תוכן ההמלצה" : "Testimonial Text"}
+                                      </label>
+                                      <textarea 
+                                        value={t.text || ''}
+                                        onChange={(e) => handleListChange(listKey, idx, 'text', e.target.value)}
+                                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-[24px] text-xs font-bold outline-none h-24 resize-none focus:border-teal-500"
+                                      />
+                                    </div>
                                   </div>
-                                  <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Testimonial</label>
-                                    <textarea 
-                                      value={t.text}
-                                      onChange={(e) => handleListChange('testimonials', idx, 'text', e.target.value)}
-                                      className="w-full px-4 py-2 bg-white border border-slate-200 rounded-[24px] text-xs font-bold outline-none h-24 resize-none"
-                                    />
-                                  </div>
-                                </div>
-                              ))}
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          );
+                        })()}
 
                         {section.title === "Founders" && (
                           <div className="md:col-span-2 space-y-6">
