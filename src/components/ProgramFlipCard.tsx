@@ -27,7 +27,7 @@ export const ProgramFlipCard = ({ title, description, link, image, color }: Prog
 
   return (
     <div 
-      className="h-[500px] [perspective:1000px] cursor-pointer group"
+      className="h-[460px] sm:h-[500px] [perspective:1000px] cursor-pointer group"
       onClick={handleToggleFlip}
     >
       <div 
@@ -35,15 +35,15 @@ export const ProgramFlipCard = ({ title, description, link, image, color }: Prog
         style={{ willChange: "transform", transformStyle: "preserve-3d" }}
       >
         {/* Front Side */}
-        <div className="flip-card-front rounded-[64px] overflow-hidden shadow-3xl border-[8px] border-white bg-white">
+        <div className="flip-card-front rounded-[40px] sm:rounded-[64px] overflow-hidden shadow-3xl border-[6px] sm:border-[8px] border-white bg-white">
           <img 
             src={image} 
             alt={title} 
             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
             referrerPolicy="no-referrer"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent flex flex-col justify-end p-10">
-            <h3 className="text-3xl font-sans font-black text-white mb-4 tracking-tighter leading-none">{title}</h3>
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent flex flex-col justify-end p-6 sm:p-10">
+            <h3 className="text-2xl sm:text-3xl font-sans font-black text-white mb-3 sm:mb-4 tracking-tighter leading-none">{title}</h3>
             <div className="flex items-center text-white/70 text-xs font-black uppercase tracking-[0.2em] group-hover:text-white transition-colors">
               {t('common.learnMore', { defaultValue: 'Learn More' })} <ChevronRight className={`w-4 h-4 ${isHe ? 'mr-2 rotate-180' : 'ml-2'}`} />
             </div>
@@ -51,16 +51,16 @@ export const ProgramFlipCard = ({ title, description, link, image, color }: Prog
         </div>
  
         {/* Back Side */}
-        <div className={`flip-card-back rounded-[64px] ${color} p-10 flex flex-col justify-center items-center text-center text-white shadow-3xl`}>
-          <h3 className="text-3xl font-sans font-black mb-8 tracking-tighter leading-none">{title}</h3>
-          <div className="flex-1 overflow-hidden w-full mb-10 flex items-center justify-center">
-            <p className="text-lg text-white/90 font-medium leading-relaxed line-clamp-6">
+        <div className={`flip-card-back rounded-[40px] sm:rounded-[64px] ${color} p-6 sm:p-10 flex flex-col justify-center items-center text-center text-white shadow-3xl`}>
+          <h3 className="text-2xl sm:text-3xl font-sans font-black mb-4 sm:mb-8 tracking-tighter leading-none">{title}</h3>
+          <div className="flex-1 overflow-y-auto w-full mb-6 sm:mb-10 flex items-center justify-center">
+            <p className="text-sm sm:text-base md:text-lg text-white/90 font-medium leading-relaxed">
               {description}
             </p>
           </div>
           <Link 
             to={link} 
-            className="w-full h-16 shrink-0 bg-white text-slate-900 font-black rounded-full flex items-center justify-center transition-all active:scale-95 text-lg shadow-xl shadow-black/10"
+            className="w-full h-12 sm:h-16 shrink-0 bg-white text-slate-900 font-black rounded-full flex items-center justify-center transition-all active:scale-95 text-base sm:text-lg shadow-xl shadow-black/10"
             onClick={(e) => e.stopPropagation()}
           >
             {t('common.goToProgram', { defaultValue: 'View Program' })}

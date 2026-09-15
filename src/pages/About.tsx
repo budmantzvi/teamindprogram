@@ -50,7 +50,6 @@ export default function About() {
             className="space-y-10 text-center lg:text-start order-2 lg:order-1"
           >
             <div className="inline-flex items-center gap-2 px-6 py-2 bg-white border border-slate-100 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-brand-green-tech shadow-sm mx-auto lg:mx-0">
-              <Sparkles className="w-4 h-4 shrink-0" />
               <span>{t('nav.about')}</span>
             </div>
             <h1 className="text-[40px] md:text-7xl lg:text-8xl font-serif font-medium tracking-tighter leading-[0.9]">

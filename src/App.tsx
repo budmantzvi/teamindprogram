@@ -74,8 +74,8 @@ function LanguageHandler() {
   });
   const pageDescription = translate(`seo.${seoKey}.description`, { 
     defaultValue: isHebrew 
-      ? "תוכנית טימיינד (TEAMIND / teamindprogram) היא התוכנית המובילה לפיתוח פונקציות ניהוליות, כישורי למידה, וויסות עצמי ואינטליגנציה רגשית אצל ילדים." 
-      : "TEAMIND (teamindprogram / teamind program) is a leading character-based program designed to strengthen executive functions in children." 
+      ? "תוכנית טימיינד היא התוכנית המובילה לפיתוח פונקציות ניהוליות, כישורי למידה, וויסות עצמי ואינטליגנציה רגשית אצל ילדים." 
+      : "TEAMIND is a leading character-based program designed to strengthen executive functions in children." 
   });
 
   const keywordsStr = isHebrew
@@ -112,14 +112,14 @@ function LanguageHandler() {
       <link rel="alternate" hrefLang="x-default" href={enUrl} />
 
       {/* Universal Icons */}
-      <link rel="shortcut icon" href="https://teamindprogram.com/favicon.ico" type="image/x-icon" />
-      <link rel="icon" href="https://teamindprogram.com/favicon.ico" type="image/x-icon" />
-      <link rel="icon" type="image/png" sizes="16x16" href="https://teamindprogram.com/favicon-16x16.png" />
-      <link rel="icon" type="image/png" sizes="32x32" href="https://teamindprogram.com/favicon-32x32.png" />
-      <link rel="icon" type="image/png" sizes="192x192" href="https://teamindprogram.com/android-chrome-192x192.png" />
-      <link rel="icon" type="image/png" sizes="512x512" href="https://teamindprogram.com/android-chrome-512x512.png" />
-      <link rel="apple-touch-icon" sizes="180x180" href="https://teamindprogram.com/apple-touch-icon.png" />
-      <link rel="manifest" href="https://teamindprogram.com/manifest.json" />
+      <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+      <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+      <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+      <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+      <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png" />
+      <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png" />
+      <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+      <link rel="manifest" href="/manifest.json" />
 
       {/* Open Graph */}
       <meta property="og:type" content="website" />

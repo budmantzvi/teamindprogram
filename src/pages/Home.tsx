@@ -243,7 +243,6 @@ export default function Home() {
                 className="text-center lg:text-start"
               >
                 <div className="inline-flex items-center gap-2 mb-8 group">
-                  <Sparkles className="w-4 h-4 text-brand-orange transition-transform group-hover:rotate-12" />
                   <span className="text-brand-orange font-bold uppercase tracking-[0.25em] text-[10px] md:text-xs">{heroBadge}</span>
                 </div>
                 <h1 className="text-[44px] md:text-7xl lg:text-8xl font-serif font-medium tracking-tighter leading-[0.95] text-slate-900 mb-8">
@@ -317,9 +316,9 @@ export default function Home() {
 
       {/* Video Section */}
       {(siteConfig?.showVideo !== false) && (
-        <section id="video" className="py-24 bg-white">
-          <div className="max-w-[1440px] mx-auto px-6 md:px-12">
-            <div className="aspect-video rounded-[64px] overflow-hidden shadow-3xl border-[10px] border-slate-50 relative group cursor-pointer bg-slate-100">
+        <section id="video" className="py-8 sm:py-20 md:py-24 bg-white">
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-12">
+            <div className="aspect-video rounded-[24px] sm:rounded-[48px] md:rounded-[64px] overflow-hidden shadow-2xl sm:shadow-3xl border-[4px] sm:border-[8px] md:border-[10px] border-slate-50 relative group cursor-pointer bg-slate-900">
               {!isPlaying && (
                 <div 
                   onClick={handlePlay}
@@ -334,7 +333,7 @@ export default function Home() {
                     decoding="async"
                   />
                   
-                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                  <div className="absolute inset-0 overflow-hidden pointer-events-none hidden sm:block">
                     <motion.img 
                       animate={{ y: [0, -10, 0] }}
                       transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
@@ -351,33 +350,33 @@ export default function Home() {
                     />
                   </div>
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-900/50 to-slate-900/10" />
                   
-                  <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12 flex items-end justify-between gap-6">
-                    <div className="space-y-3 text-start">
-                      <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-brand-orange text-white text-[10px] font-bold uppercase tracking-[0.2em] rounded-full shadow-lg">
-                        <Play className="w-3.5 h-3.5 fill-current" />
+                  <div className="absolute bottom-0 left-0 right-0 p-3.5 sm:p-8 md:p-12 flex items-end justify-between gap-3 sm:gap-6">
+                    <div className="space-y-1.5 sm:space-y-3 text-start max-w-2xl">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-4 sm:py-1.5 bg-brand-orange text-white text-[8px] sm:text-[10px] font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] rounded-full shadow-lg">
+                        <Play className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 fill-current" />
                         <span>{videoBadge}</span>
                       </div>
-                      <h3 className="text-3xl md:text-5xl font-sans font-bold text-white tracking-tight">
+                      <h3 className="text-sm sm:text-2xl md:text-4xl lg:text-5xl font-sans font-bold text-white tracking-tight leading-tight">
                         {safeSplit(videoTitle, '.').map((part: string, i: number, arr: string[]) => (
                           <span key={i}>
                             <span>
                               {part}{i < arr.length - 1 ? '.' : ''}
                             </span>
-                            {i < arr.length - 1 && <br />}
+                            {i < arr.length - 1 && <br className="hidden sm:inline" />}
                             {i < arr.length - 1 && ' '}
                           </span>
                         ))}
                       </h3>
-                      <p className="text-white/70 font-medium text-sm md:text-lg max-w-lg leading-relaxed">
+                      <p className="text-white/90 font-medium text-[10px] sm:text-xs md:text-base max-w-lg leading-tight sm:leading-relaxed">
                         {videoSubtitle}
                       </p>
                     </div>
                     
                     <div className="flex flex-col items-center gap-3 shrink-0">
-                      <div className="w-14 h-14 md:w-20 md:h-20 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full flex items-center justify-center text-white group-hover:bg-brand-green group-hover:border-brand-green group-hover:scale-110 transition-all duration-500 shadow-2xl">
-                        <Play className={`w-6 h-6 md:w-8 md:h-8 fill-current ${isHe ? 'ml-0 mr-1' : 'ml-1'}`} />
+                      <div className="w-9 h-9 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full flex items-center justify-center text-white group-hover:bg-brand-green group-hover:border-brand-green group-hover:scale-110 transition-all duration-500 shadow-2xl">
+                        <Play className={`w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8 fill-current ${isHe ? 'ml-0 mr-0.5' : 'ml-0.5'}`} />
                       </div>
                     </div>
                   </div>
@@ -387,7 +386,7 @@ export default function Home() {
               <video 
                 key={videoUrl}
                 ref={videoRef}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain bg-black"
                 controls
                 playsInline
                 poster={siteImages.videoThumbnail}
@@ -578,7 +577,7 @@ export default function Home() {
                   </div>
                   <h3 className="text-2xl font-sans font-bold mb-2 text-center text-slate-900 transition-colors uppercase tracking-tight">{char.name}</h3>
                   <p className="text-brand-pink text-xs font-bold uppercase tracking-widest mb-4 text-center">{char.role}</p>
-                  <p className="text-slate-600 font-medium leading-relaxed text-center line-clamp-3 lg:line-clamp-none overflow-hidden h-20 lg:h-auto">
+                  <p className="text-slate-600 font-medium leading-relaxed text-center text-sm md:text-base">
                     {char.desc}
                   </p>
                 </div>
@@ -681,17 +680,19 @@ export default function Home() {
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1 }}
-                  className="group bg-slate-50 rounded-[56px] overflow-hidden border border-slate-100 hover:shadow-3xl transition-all duration-700 text-center lg:text-start"
+                  className="group bg-slate-50 rounded-[56px] overflow-hidden border border-slate-100 hover:shadow-3xl transition-all duration-700 text-center lg:text-start flex flex-col h-full"
                 >
-                  <div className="p-10 md:p-14 flex flex-col justify-center gap-8">
-                    <div>
-                      <h3 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4 tracking-tighter">{member.name}</h3>
-                      <p className="inline-block px-4 py-1.5 bg-brand-green/10 text-brand-green font-bold uppercase tracking-widest text-[10px] rounded-full">{member.role}</p>
+                  <div className="p-10 md:p-14 flex flex-col justify-between h-full gap-8">
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4 tracking-tighter">{member.name}</h3>
+                        <p className="inline-block px-4 py-1.5 bg-brand-green/10 text-brand-green font-bold uppercase tracking-widest text-[10px] rounded-full">{member.role}</p>
+                      </div>
+                      <p className="text-slate-600 font-medium leading-relaxed text-base md:text-lg">
+                        {member.desc}
+                      </p>
                     </div>
-                    <p className="text-slate-600 font-medium leading-relaxed text-base md:text-lg">
-                      {member.desc}
-                    </p>
-                    <div className="flex flex-wrap justify-center lg:justify-start gap-3 pt-6 border-t border-slate-200/50">
+                    <div className="flex flex-wrap justify-center lg:justify-start gap-3 pt-6 border-t border-slate-200/50 mt-auto">
                       {member.stats.map((stat: string, j: number) => (
                         <div key={j} className="px-5 py-2 bg-white rounded-2xl border border-slate-200 text-[10px] font-bold uppercase tracking-widest text-slate-400">
                           {stat}
