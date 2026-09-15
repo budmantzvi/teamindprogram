@@ -28,7 +28,7 @@ export const SEO = ({ title, description, image, url, keywords }: { title?: stri
     ? "טימיינד | פיתוח פונקציות ניהוליות וכישורי למידה לילדים" 
     : "TEAMIND | Thinking, Emotions, Attention & Motivation IN Development";
   const siteDescription = i18n.language === 'he'
-    ? "טימיינד (TEAMIND) היא תוכנית מבוססת דמויות המפתחת פונקציות ניהוליות אצל ילדים דרך מוסיקה, משחק וחיבור רגשי (SEL). פתרון פדגוגי מוביל לגני ילדים, בתי ספר והורים."
+    ? "טימיינד היא תוכנית מבוססת דמויות המפתחת פונקציות ניהוליות אצל ילדים דרך מוסיקה, משחק וחיבור רגשי. פתרון פדגוגי מוביל לגני ילדים, בתי ספר והורים."
     : "TEAMIND is a revolutionary character-based program designed to strengthen executive functions in children through music, play, and emotional connection.";
   const siteUrl = "https://teamindprogram.com";
   const siteImage = "https://teamindprogram.com/images/logo.png"; 

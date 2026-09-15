@@ -33,11 +33,14 @@ export default function About() {
       <SEO 
         title={t('nav.about')} 
         description={isHe 
-          ? "הכירו את הצוות שמאחורי TEAMIND - מומחיות בחינוך ופיתוח הילד המביאות גישה חדשנית לפיתוח פונקציות ניהוליות." 
+          ? "הכירו את הצוות שמאחורי טימיינד - מומחיות בחינוך ופיתוח הילד המביאות גישה חדשנית לפיתוח פונקציות ניהוליות." 
           : "Meet the team behind TEAMIND - education and child development experts bringing an innovative approach to executive function development."
         }
         url="/about"
-        keywords="about TEAMIND, אודות טימיינד, פיתוח פונקציות ניהוליות, מחקר נוירו-התפתחותי, המייסדות, executive functions research, child development founders"
+        keywords={isHe
+          ? "אודות טימיינד, הצוות, המייסדות, יניפר בודמן, שרה אלחרר, פיתוח פונקציות ניהוליות, מחקר נוירו-התפתחותי"
+          : "about TEAMIND, founders, Jennifer Budman, Sarah Elharar, executive functions research, child development experts"
+        }
       />
 
       {/* Hero Section */}

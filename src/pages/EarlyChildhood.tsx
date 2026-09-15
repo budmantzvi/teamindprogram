@@ -76,7 +76,10 @@ export default function EarlyChildhood() {
           ? "תוכנית טימיינד לגיל הרך (גילאי 3-6) מפתחת פונקציות ניהוליות דרך משחק, מוסיקה ודמויות מעוררות השראה." 
           : "TEAMIND Early Childhood program (Ages 3-6) develops executive functions through play, music, and inspiring characters."
         }
-        keywords="ערכת הגיל הרך, גנים, מיומנויות למידה לגן, מוכנות לכיתה א, פונקציות ניהוליות לגן, Early childhood education, Preschool skills, kindergarten teacher, גננות, חינוך לגיל הרך"
+        keywords={isHe 
+          ? "טימיינד לגיל הרך, ערכת הגיל הרך, גנים, מיומנויות למידה לגן, מוכנות לכיתה א, פונקציות ניהוליות לגן, גננות, חינוך לגיל הרך, תוכנית טימיינד"
+          : "TEAMIND early childhood, Early childhood education, Preschool skills, kindergarten teacher, executive functions, school readiness"
+        }
       />
       {/* Hero Section */}
       <section className="max-w-[1440px] mx-auto px-6 md:px-12 mb-24 overflow-hidden">

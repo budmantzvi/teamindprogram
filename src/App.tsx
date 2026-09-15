@@ -91,9 +91,8 @@ function LanguageHandler() {
     "inLanguage": isHebrew ? "he-IL" : "en-US",
     "isPartOf": {
       "@type": "WebSite",
-      "name": isHebrew ? "TEAMIND - טימיינד" : "TEAMIND Program",
-      "url": "https://teamindprogram.com/",
-      "alternateName": ["TEAMIND", "teamind", "team mind", "Team Mind", "team mind program", "teamind program", "teamindprogram", "טימיינד", "תוכנית טימיינד", "טי מיינד"]
+      "name": isHebrew ? "TEAMIND" : "TEAMIND Program",
+      "url": "https://teamindprogram.com/"
     }
   };
 
@@ -112,14 +111,14 @@ function LanguageHandler() {
       <link rel="alternate" hrefLang="x-default" href={enUrl} />
 
       {/* Universal Icons */}
-      <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
-      <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-      <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-      <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-      <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png" />
-      <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png" />
-      <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-      <link rel="manifest" href="/manifest.json" />
+      <link rel="shortcut icon" href="https://teamindprogram.com/favicon.ico" type="image/x-icon" />
+      <link rel="icon" href="https://teamindprogram.com/favicon.ico" type="image/x-icon" />
+      <link rel="icon" type="image/png" sizes="16x16" href="https://teamindprogram.com/favicon-16x16.png" />
+      <link rel="icon" type="image/png" sizes="32x32" href="https://teamindprogram.com/favicon-32x32.png" />
+      <link rel="icon" type="image/png" sizes="192x192" href="https://teamindprogram.com/android-chrome-192x192.png" />
+      <link rel="icon" type="image/png" sizes="512x512" href="https://teamindprogram.com/android-chrome-512x512.png" />
+      <link rel="apple-touch-icon" sizes="180x180" href="https://teamindprogram.com/apple-touch-icon.png" />
+      <link rel="manifest" href="https://teamindprogram.com/manifest.json" />
 
       {/* Open Graph */}
       <meta property="og:type" content="website" />

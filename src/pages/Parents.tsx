@@ -82,7 +82,10 @@ export default function Parents() {
           ? "תוכנית טימיינד להורים מספקת כלים פרקטיים לחיזוק הקשר הרגשי ופיתוח מיומנויות ניהוליות בבית." 
           : "TEAMIND Parents program provides practical tools to strengthen emotional connection and develop executive functions at home."
         }
-        keywords="הדרכת הורים, עבודה עם ילדים בבית, ערכת הורים, מיומנויות לבית, Parenting tools, Homework skills, Home executive functions, חינוך מהבית, פיתוח הילד, טיפים להורים"
+        keywords={isHe
+          ? "טימיינד להורים, הדרכת הורים, עבודה עם ילדים בבית, ערכת הורים, מיומנויות לבית, חינוך מהבית, פיתוח הילד, טיפים להורים, תוכנית טימיינד"
+          : "TEAMIND parents, Parenting tools, Homework skills, Home executive functions, child development at home"
+        }
       />
       {/* Hero Section */}
       <section className="max-w-[1440px] mx-auto px-6 md:px-12 mb-24 overflow-hidden">

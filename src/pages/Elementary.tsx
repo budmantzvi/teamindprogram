@@ -76,7 +76,10 @@ export default function Elementary() {
           ? "תוכנית טימיינד לבתי ספר יסודיים (גילאי 6-12) מחזקת מיומנויות למידה, ריכוז וארגון בקרב תלמידים." 
           : "TEAMIND Elementary program (Ages 6-12) strengthens learning skills, focus, and organization in students."
         }
-        keywords="ערכת בית ספר יסודי, מיומנויות למידה ליסודי, אסטרטגיות למידה, תפקודי ניהול בבית הספר, Elementary school executive functions, Learning strategies, מוכנות ללימודים, שיפור ריכוז, קשב וריכוז"
+        keywords={isHe
+          ? "טימיינד לבית ספר יסודי, ערכת בית ספר יסודי, מיומנויות למידה ליסודי, אסטרטגיות למידה, תפקודי ניהול בבית הספר, מוכנות ללימודים, שיפור ריכוז, קשב וריכוז, תוכנית טימיינד"
+          : "TEAMIND elementary, Elementary school executive functions, Learning strategies, school focus, attention and concentration"
+        }
       />
       {/* Hero Section */}
       <section className="max-w-[1440px] mx-auto px-6 md:px-12 mb-24 overflow-hidden">
