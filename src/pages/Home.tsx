@@ -59,14 +59,46 @@ const characters = [
 ];
 
 export default function Home() {
+  const location = useLocation();
+  const isHe = /^\/he($|\/)/.test(location.pathname);
+  const prefix = isHe ? '/he' : '';
+
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMarqueePaused, setIsMarqueePaused] = useState(false);
   const { siteConfig, siteImages, t_config } = useSite();
   const { t, i18n } = useTranslation();
-  const location = useLocation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Marquee Auto-Scroll Logic
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container || isMarqueePaused) return;
+
+    let animationFrameId: number;
+
+    const scroll = () => {
+      // In Hebrew, we want it to move Left to Right.
+      // Left to Right means elements emerge from left and go right.
+      // So the container needs to scroll leftwards (scrollLeft decreases).
+      if (isHe) {
+        container.scrollLeft -= 1.5;
+        if (container.scrollLeft <= 0) {
+          container.scrollLeft = container.scrollWidth / 2;
+        }
+      } else {
+        container.scrollLeft += 1.5;
+        if (container.scrollLeft >= container.scrollWidth / 2) {
+          container.scrollLeft = 0;
+        }
+      }
+      animationFrameId = requestAnimationFrame(scroll);
+    };
+
+    animationFrameId = requestAnimationFrame(scroll);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [isMarqueePaused, isHe]);
 
   useEffect(() => {
     const hash = location.hash;
@@ -125,8 +157,6 @@ export default function Home() {
   const aboutImage = siteImages.about || FALLBACK_IMAGES.about;
 
   // Use localized versions of arrays if they exist in siteConfig
-  const isHe = /^\/he($|\/)/.test(location.pathname);
-  const prefix = isHe ? '/he' : '';
   const charactersList = t_config('charactersList');
   const whyCards = t_config('whyCards');
   const faqsList = t_config('faqs');
@@ -604,24 +634,13 @@ export default function Home() {
           </div>
           
           <div 
-            className="relative flex overflow-x-hidden transform-gpu" 
+            ref={scrollRef}
+            className="relative flex overflow-x-auto scrollbar-hide transform-gpu select-none" 
             dir="ltr"
-            onMouseEnter={() => setIsMarqueePaused(true)}
-            onMouseLeave={() => setIsMarqueePaused(false)}
-            onTouchStart={() => setIsMarqueePaused(true)}
-            onTouchEnd={() => setIsMarqueePaused(false)}
-            onTouchCancel={() => setIsMarqueePaused(false)}
+            style={{ WebkitOverflowScrolling: 'touch' }}
           >
-            <div 
-              className="py-12 animate-marquee flex whitespace-nowrap"
-              style={{ 
-                willChange: "transform", 
-                transform: "translate3d(0, 0, 0)", 
-                backfaceVisibility: "hidden",
-                animationPlayState: isMarqueePaused ? 'paused' : 'running'
-              }}
-            >
-              {[...testimonialsList, ...testimonialsList].map((t: any, i: number) => (
+            <div className="py-12 flex whitespace-nowrap w-max">
+              {[...testimonialsList, ...testimonialsList, ...testimonialsList, ...testimonialsList].map((t: any, i: number) => (
                 <div 
                   key={i} 
                   className={`mx-4 w-[85vw] md:w-[450px] p-10 md:p-12 bg-slate-50 rounded-[48px] border border-slate-100 flex flex-col gap-8 shrink-0 transition-shadow duration-300 ${isHe ? 'text-right' : 'text-left'}`}
@@ -632,7 +651,7 @@ export default function Home() {
                   onTouchEnd={() => setIsMarqueePaused(false)}
                   onTouchCancel={() => setIsMarqueePaused(false)}
                 >
-                  <p className="text-slate-600 text-lg md:text-xl font-medium italic leading-relaxed whitespace-normal">"{t.text}"</p>
+                  <p className="text-slate-600 text-lg md:text-xl font-medium italic leading-relaxed whitespace-normal whitespace-pre-wrap">"{t.text}"</p>
                   <div className={`flex items-center gap-6 mt-auto ${isHe ? 'flex-row-reverse' : ''}`}>
                     {t.image && t.image.trim() !== '' && (
                       <img 
@@ -717,7 +736,7 @@ export default function Home() {
       {/* FAQ Section */}
       {(siteConfig?.showFaq !== false) && (
         <section className="py-24 md:py-32 lg:py-40 bg-white">
-          <div className="max-w-3xl mx-auto px-6">
+          <div className="max-w-3xl mx-auto px-6" dir={isHe ? 'rtl' : 'ltr'}>
             <h2 className="text-4xl md:text-5xl lg:text-5xl font-sans font-bold mb-16 lg:mb-24 text-center tracking-tighter">
               {safeSplit(faqTitle, ' ').map((word: string, i: number, arr: string[]) => (
                 <span key={i}>
@@ -733,10 +752,10 @@ export default function Home() {
                 <div key={i} className="border border-slate-100 rounded-[32px] overflow-hidden">
                   <button 
                     onClick={() => setActiveFaq(activeFaq === i ? null : i)}
-                    className="w-full px-8 py-6 flex justify-between items-center text-left hover:bg-slate-50 transition-colors"
+                    className={`w-full px-8 py-6 flex justify-between items-center hover:bg-slate-50 transition-colors ${isHe ? 'text-right' : 'text-left'}`}
                   >
                     <span className="text-lg font-bold text-slate-900">{faq.question}</span>
-                    {activeFaq === i ? <Minus className="w-5 h-5 text-brand-orange" /> : <Plus className="w-5 h-5 text-brand-orange" />}
+                    {activeFaq === i ? <Minus className="w-5 h-5 text-brand-orange shrink-0" /> : <Plus className="w-5 h-5 text-brand-orange shrink-0" />}
                   </button>
                   <AnimatePresence>
                     {activeFaq === i && (
@@ -744,7 +763,7 @@ export default function Home() {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="px-8 pb-6 text-slate-600 font-medium leading-relaxed"
+                        className={`px-8 pb-6 text-slate-600 font-medium leading-relaxed ${isHe ? 'text-right' : 'text-left'}`}
                       >
                         {faq.answer}
                       </motion.div>

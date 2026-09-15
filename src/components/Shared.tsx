@@ -136,8 +136,10 @@ export const ContactForm = () => {
       .max(500, t('contact.form.maxChars')),
   });
 
-  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<ContactFormValues>({
+  const { register, handleSubmit, reset, setValue, clearErrors, formState: { errors, isSubmitting } } = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
+    mode: 'onSubmit',
+    reValidateMode: 'onSubmit'
   });
 
   // Prevent key repeating (long press)
@@ -277,15 +279,19 @@ export const ContactForm = () => {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 text-start">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 md:space-y-8 text-start">
       <div className="space-y-3">
         <label className="text-xs font-bold text-slate-700 mx-4 uppercase tracking-[0.2em]">{t('contact.form.name')}</label>
         <input 
           {...register("name")}
+          onChange={(e) => {
+            register("name").onChange(e);
+            if (errors.name) clearErrors("name");
+          }}
           onKeyDown={handleKeyDown}
           onKeyUp={handleKeyUp}
           maxLength={50}
-          className="w-full px-8 py-5 bg-white border border-slate-200 rounded-[32px] focus:outline-none focus:ring-4 focus:ring-brand-light-blue/10 focus:border-brand-light-blue transition-all font-bold"
+          className="w-full px-6 py-4 md:px-8 md:py-5 bg-white border border-slate-200 rounded-[24px] md:rounded-[32px] focus:outline-none focus:ring-4 focus:ring-brand-light-blue/10 focus:border-brand-light-blue transition-all font-bold"
           placeholder={t('contact.form.placeholder.name')}
         />
         {errors.name && <p className="text-xs text-red-500 mx-4 font-bold">{errors.name.message}</p>}
@@ -294,9 +300,13 @@ export const ContactForm = () => {
         <label className="text-xs font-bold text-slate-700 mx-4 uppercase tracking-[0.2em]">{t('contact.form.email')}</label>
         <input 
           {...register("email")}
+          onChange={(e) => {
+            register("email").onChange(e);
+            if (errors.email) clearErrors("email");
+          }}
           onKeyDown={handleKeyDown}
           onKeyUp={handleKeyUp}
-          className="w-full px-8 py-5 bg-white border border-slate-200 rounded-[32px] focus:outline-none focus:ring-4 focus:ring-brand-light-blue/10 focus:border-brand-light-blue transition-all font-bold"
+          className="w-full px-6 py-4 md:px-8 md:py-5 bg-white border border-slate-200 rounded-[24px] md:rounded-[32px] focus:outline-none focus:ring-4 focus:ring-brand-light-blue/10 focus:border-brand-light-blue transition-all font-bold"
           placeholder={t('contact.form.placeholder.email')}
         />
         {errors.email && <p className="text-xs text-red-500 mx-4 font-bold">{errors.email.message}</p>}
@@ -310,10 +320,11 @@ export const ContactForm = () => {
             value={phoneValue}
             onChange={(val) => {
               setPhoneValue(val);
-              setValue("phone", val || "", { shouldValidate: true });
+              setValue("phone", val || "", { shouldValidate: false });
+              if (errors.phone) clearErrors("phone");
             }}
             placeholder={t('common.phone')}
-            className={`w-full px-8 py-5 bg-white border border-slate-200 rounded-[32px] focus-within:ring-4 focus-within:ring-brand-light-blue/10 focus-within:border-brand-light-blue transition-all font-bold ${i18n.language === 'he' ? 'text-right' : 'text-left'}`}
+            className={`w-full px-6 py-4 md:px-8 md:py-5 bg-white border border-slate-200 rounded-[24px] md:rounded-[32px] focus-within:ring-4 focus-within:ring-brand-light-blue/10 focus-within:border-brand-light-blue transition-all font-bold ${i18n.language === 'he' ? 'text-right' : 'text-left'}`}
           />
         </div>
         {errors.phone && <p className="text-xs text-red-500 mx-4 font-bold">{errors.phone.message}</p>}
@@ -324,7 +335,10 @@ export const ContactForm = () => {
           <div className="flex items-center gap-4">
             <button 
               type="button"
-              onClick={() => setValue("message", "", { shouldValidate: true })}
+              onClick={() => {
+                setValue("message", "", { shouldValidate: false });
+                clearErrors("message");
+              }}
               className="text-[10px] font-bold text-rose-500 uppercase tracking-widest hover:underline flex items-center gap-1"
             >
               <X className="w-3 h-3" /> {t('contact.form.clear')}
@@ -334,11 +348,15 @@ export const ContactForm = () => {
         </div>
         <textarea 
           {...register("message")}
+          onChange={(e) => {
+            register("message").onChange(e);
+            if (errors.message) clearErrors("message");
+          }}
           onKeyDown={handleKeyDown}
           onKeyUp={handleKeyUp}
           maxLength={500}
           rows={4}
-          className="w-full px-8 py-5 bg-white border border-slate-200 rounded-[32px] focus:outline-none focus:ring-4 focus:ring-brand-light-blue/10 focus:border-brand-light-blue transition-all font-bold resize-none"
+          className="w-full px-6 py-4 md:px-8 md:py-5 bg-white border border-slate-200 rounded-[24px] md:rounded-[32px] focus:outline-none focus:ring-4 focus:ring-brand-light-blue/10 focus:border-brand-light-blue transition-all font-bold resize-none"
           placeholder={t('contact.form.placeholder.message')}
         />
         {errors.message && <p className="text-xs text-red-500 mx-4 font-bold">{errors.message.message}</p>}
@@ -347,7 +365,7 @@ export const ContactForm = () => {
       <button 
         type="submit"
         disabled={isSubmitting}
-        className="w-full py-6 bg-brand-red text-white font-bold rounded-[32px] text-2xl hover:bg-brand-red/90 transition-all shadow-2xl shadow-brand-red/20 disabled:opacity-50 active:scale-95 flex items-center justify-center gap-3"
+        className="w-full py-4 md:py-6 bg-brand-red text-white font-bold rounded-[24px] md:rounded-[32px] text-xl md:text-2xl hover:bg-brand-red/90 transition-all shadow-2xl shadow-brand-red/20 disabled:opacity-50 active:scale-95 flex items-center justify-center gap-3"
       >
         {isSubmitting ? <Loader2 className="w-8 h-8 animate-spin" /> : t('contact.form.submit')}
       </button>
@@ -388,6 +406,8 @@ export const Logo = ({ className = "", size = "md", light = false }: { className
 export const WhatsAppFloat = () => {
   const { siteConfig } = useSite();
   const contactPhone = siteConfig?.contactPhone || "972503422600";
+  const location = useLocation();
+  const isHe = /^\/he($|\/)/.test(location.pathname);
   
   return (
     <motion.a
@@ -399,11 +419,11 @@ export const WhatsAppFloat = () => {
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
       style={{ transform: 'translateZ(0)', willChange: 'transform' }}
-      className="fixed bottom-6 right-6 z-[60] w-16 h-16 bg-[#25D366] text-white rounded-full shadow-2xl flex items-center justify-center transition-transform hover:shadow-green-500/40 md:w-18 md:h-18"
+      className={`fixed bottom-4 sm:bottom-6 z-[60] w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 bg-[#25D366] text-white rounded-full shadow-2xl flex items-center justify-center transition-transform hover:shadow-green-500/40 ${isHe ? 'left-4 sm:left-6' : 'right-4 sm:right-6'}`}
       aria-label="Contact on WhatsApp"
     >
-      <MessageCircle className="w-8 h-8" />
-      <span className="absolute -top-1 -right-1 flex h-4 w-4">
+      <MessageCircle className="w-7 h-7 sm:w-8 sm:h-8" />
+      <span className={`absolute -top-1 ${isHe ? '-left-1' : '-right-1'} flex h-4 w-4`}>
         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
         <span className="relative inline-flex rounded-full h-4 w-4 bg-green-500 border-2 border-white"></span>
       </span>
@@ -440,6 +460,14 @@ export const Navbar = () => {
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     setIsOpen(false);
+    
+    // If navigating to home and already on home, scroll to top
+    if (href === (prefix || "/") && window.location.pathname === (prefix || "/")) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     if (href.includes('#')) {
       const parts = href.split('#');
       const targetPath = parts[0] || '/';
@@ -478,7 +506,17 @@ export const Navbar = () => {
         scrolled ? 'bg-white/95 backdrop-blur-md py-3 shadow-md shadow-slate-900/[0.04]' : 'bg-transparent py-4 md:py-6'
       }`}>
         <div className="max-w-[1440px] mx-auto px-6 md:px-12 flex flex-row justify-between items-center" dir="ltr">
-          <Link to={prefix || "/"} className="flex items-center" onClick={() => setIsOpen(false)}>
+          <Link 
+            to={prefix || "/"} 
+            className="flex items-center" 
+            onClick={(e) => {
+              setIsOpen(false);
+              if (window.location.pathname === (prefix || "/")) {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            }}
+          >
             <Logo size="md" />
           </Link>
 
