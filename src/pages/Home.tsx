@@ -172,10 +172,14 @@ export default function Home() {
 
   const videoUrl = t_config('videoUrl');
 
-  const handlePlay = () => {
+  const handlePlay = async () => {
     if (videoRef.current) {
-      videoRef.current.play();
-      setIsPlaying(true);
+      try {
+        setIsPlaying(true);
+        await videoRef.current.play();
+      } catch (err) {
+        console.error("Video play failed, allowing native controls", err);
+      }
     }
   };
   const handleCheckout = async (plan: any) => {
@@ -386,9 +390,10 @@ export default function Home() {
               <video 
                 key={videoUrl}
                 ref={videoRef}
-                className="w-full h-full object-contain bg-black"
+                className="w-full h-full bg-black sm:bg-transparent sm:object-cover object-contain"
                 controls
                 playsInline
+                preload="metadata"
                 poster={siteImages.videoThumbnail}
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
