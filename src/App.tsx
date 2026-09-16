@@ -110,15 +110,24 @@ function LanguageHandler() {
       <link rel="alternate" hrefLang="he" href={heUrl} />
       <link rel="alternate" hrefLang="x-default" href={enUrl} />
 
-      {/* Universal Icons */}
-      <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
-      <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-      <link rel="icon" type="image/png" href="/favicon.png" />
-      <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-      <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+      {/* Standard & High-Resolution Favicons for Google Search & All Browsers */}
+      {/* Google Search requires a multiple of 48px square (48x48, 96x96, 144x144, 192x192, 512x512) */}
+      <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
+      <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
+      <link rel="icon" type="image/png" sizes="144x144" href="/favicon-144x144.png" />
       <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png" />
       <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png" />
+      <link rel="icon" href="/favicon.ico" sizes="48x48 32x32 16x16" />
+      <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+
+      {/* Apple Touch Icons (iOS & Safari) */}
       <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+      <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/apple-touch-icon.png" />
+
+      {/* Standard Browser Fallbacks */}
+      <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+      <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+      <link rel="icon" type="image/png" href="/favicon.png" />
       <link rel="manifest" href="/manifest.json" />
 
       {/* Open Graph */}
