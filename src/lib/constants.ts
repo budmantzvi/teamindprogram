@@ -6,7 +6,7 @@ export const safeSplit = (val: any, char: string = ' '): string[] => {
 };
 
 export const FALLBACK_IMAGES: any = {
-  hero: "/hero.png",
+  hero: "/images/hero.png",
   about: "/images/early-3.jpeg",
   kit: "/images/kit.jpg",
   founder1: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1976&auto=format&fit=crop",
@@ -265,7 +265,7 @@ export const DEFAULT_CONFIG: any = {
     <ul>
       <li><strong>Full Name:</strong> Your name and email address when you choose to submit them via our contact form or during the checkout process.</li>
       <li><strong>Shipping Address:</strong> Your physical address for the delivery of pedagogical kits.</li>
-      <li><strong>Payment Info:</strong> All payments are processed through Meshulam. We do not store your credit card details on our servers.</li>
+      <li><strong>Payment Info:</strong> All payments are processed through Grow. We do not store your credit card details on our servers.</li>
     </ul>
 
     <h2>How We Use Your Information</h2>
@@ -280,7 +280,7 @@ export const DEFAULT_CONFIG: any = {
     <p>We implement appropriate technical and organizational security measures to protect the security of any personal information we process. However, please also remember that we cannot guarantee that the internet itself is 100% secure.</p>
 
     <h2>Third-Party Services</h2>
-    <p>We use Meshulam for payment processing and automation. We also use Firebase for data storage. We do not sell or share your personal information with any other third parties for marketing purposes.</p>
+    <p>We use Grow for payment processing and automation. We also use Firebase for data storage. We do not sell or share your personal information with any other third parties for marketing purposes.</p>
 
     <h2>Contact Us</h2>
     <p>If you have questions or comments about this policy, you may email us at support@teamindprogram.com.</p>
@@ -294,7 +294,7 @@ export const DEFAULT_CONFIG: any = {
     <ul>
       <li><strong>שם מלא:</strong> שמך וכתובת האימייל שלך כאשר אתה בוחר לשלוח אותם דרך טופס יצירת הקשר שלנו או במהלך תהליך התשלום.</li>
       <li><strong>כתובת למשלוח:</strong> הכתובת הפיזית שלך לאספקת הערכות הפדגוגיות.</li>
-      <li><strong>פרטי תשלום:</strong> כל התשלומים מעובדים באמצעות "משולם". איננו שומרים את פרטי כרטיס האשראי שלך בשרתים שלנו.</li>
+      <li><strong>פרטי תשלום:</strong> כל התשלומים מעובדים באמצעות "Grow". איננו שומרים את פרטי כרטיס האשראי שלך בשרתים שלנו.</li>
     </ul>
 
     <h2>כיצד אנו משתמשים במידע שלך</h2>
@@ -309,7 +309,7 @@ export const DEFAULT_CONFIG: any = {
     <p>אנו מיישמים אמצעי אבטחה טכניים וארגוניים מתאימים כדי להגן על אבטחת כל מידע אישי שאנו מעבדים. עם זאת, אנא זכור גם כי איננו יכולים להבטיח שהאינטרנט עצמו מאובטח ב-100%.</p>
 
     <h2>שירותי צד שלישי</h2>
-    <p>אנו משתמשים ב"משולם" לצורך עיבוד תשלומים ואוטומציה. אנו משתמשים גם ב-Firebase לאחסון נתונים. איננו מוכרים או משתפים את המידע האישי שלך עם צדדים שלישיים אחרים למטרות שיווק.</p>
+    <p>אנו משתמשים ב"Grow" לצורך עיבוד תשלומים ואוטומציה. אנו משתמשים גם ב-Firebase לאחסון נתונים. איננו מוכרים או משתפים את המידע האישי שלך עם צדדים שלישיים אחרים למטרות שיווק.</p>
 
     <h2>צרו קשר</h2>
     <p>אם יש לך שאלות או הערות לגבי מדיניות זו, תוכל לשלוח לנו דוא"ל לכתובת support@teamindprogram.com.</p>
@@ -325,7 +325,7 @@ export const DEFAULT_CONFIG: any = {
     <p>The TEAMIND program, including its characters (Brainman, Molly the Mirror, etc.), stories, songs, and educational materials, are the intellectual property of TEAMIND. You may not reproduce, distribute, or create derivative works from our materials without explicit written permission.</p>
 
     <h2>Purchase and Payment</h2>
-    <p>All purchases are processed through Meshulam. By providing your payment information, you represent and warrant that you have the legal right to use the payment method. We reserve the right to refuse or cancel any order for any reason.</p>
+    <p>All purchases are processed through Grow. By providing your payment information, you represent and warrant that you have the legal right to use the payment method. We reserve the right to refuse or cancel any order for any reason.</p>
 
     <h2>Limitation of Liability</h2>
     <p>In no event shall TEAMIND be liable for any indirect, incidental, special, consequential, or punitive damages arising out of or in connection with your use of our services or products.</p>
@@ -347,7 +347,7 @@ export const DEFAULT_CONFIG: any = {
     <p>תוכנית טימיינד, כולל הדמויות שלה (אדון מוחון, ליבי המראה וכו'), סיפורים, שירים וחומרים חינוכיים, הם הקניין הרוחני של טימיינד. אין לשכפל, להפיץ או ליצור יצירות נגזרות מהחומרים שלנו ללא רשות מפורשת בכתב.</p>
 
     <h2>רכישה ותשלום</h2>
-    <p>כל הרכישות מעובדות באמצעות "משולם". על ידי מסירת פרטי התשלום שלך, אתה מצהיר ומתחייב כי יש לך את הזכות המשפטית להשתמש באמצעי התשלום. אנו שומרים לעצמנו את הזכות לסרב או לבטל כל הזמנה מכל סיבה שהיא.</p>
+    <p>כל הרכישות מעובדות באמצעות "Grow". על ידי מסירת פרטי התשלום שלך, אתה מצהיר ומתחייב כי יש לך את הזכות המשפטית להשתמש באמצעי התשלום. אנו שומרים לעצמנו את הזכות לסרב או לבטל כל הזמנה מכל סיבה שהיא.</p>
 
     <h2>הגבלת אחריות</h2>
     <p>בשום מקרה טימיינד לא תהיה אחראית לכל נזק עקיף, מקרי, מיוחד, תוצאתי או עונשי הנובע משימושך בשירותים או במוצרים שלנו או בקשר אליו.</p>
